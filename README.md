@@ -1,14 +1,14 @@
 # OptiFlux
 
-OptiFlux is a lightweight MLOps tool designed for code deployment, logging, and version management.
+OptiFlux 是一个轻量级的 MLOps 工具，专为代码部署、日志记录和版本管理而设计。
 
-## Installation
+## 安装
 
-You can install OptiFlux using pip:
+您可以使用 pip 安装 OptiFlux：
 
 ```bash
 pip install .
-```
+
 
 ## 更新目录结构
 ```py
@@ -37,6 +37,8 @@ OptiFlux/
 ### Start the Server
 
 optiflux-server
+python -m optiflux.server.server --env prod  -g
+python -m optiflux.server.server --env dev
 
 ### Deploy Code
 
