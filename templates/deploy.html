@@ -1,0 +1,50 @@
+<div class="card mt-3">
+    <div class="card-header">
+        Code Deployment
+    </div>
+    <div class="card-body">
+        <form id="deployForm" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="envSelect" class="form-label">Environment</label>
+                <select class="form-select" id="envSelect" name="env">
+                    <option value="dev">Dev</option>
+                    <option value="preprod">Preprod</option>
+                    <option value="prod">Prod</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="modelName" class="form-label">Model Name</label>
+                <input type="text" class="form-control" id="modelName" name="model_name" required>
+            </div>
+            <div class="mb-3">
+                <label for="modelVersion" class="form-label">Model Version</label>
+                <input type="text" class="form-control" id="modelVersion" name="model_version" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Upload Type</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="uploadType" id="uploadFile" value="file" checked>
+                    <label class="form-check-label" for="uploadFile">
+                        Upload File
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="uploadType" id="uploadFolder" value="folder">
+                    <label class="form-check-label" for="uploadFolder">
+                        Upload Folder
+                    </label>
+                </div>
+            </div>
+            <div class="mb-3" id="fileUploadSection">
+                <label for="codeFile" class="form-label">Upload File</label>
+                <input class="form-control" type="file" id="codeFile" name="file">
+            </div>
+            <div class="mb-3" id="folderUploadSection" style="display: none;">
+                <label for="codeFolder" class="form-label">Upload Folder</label>
+                <input class="form-control" type="file" id="codeFolder" name="folder" webkitdirectory directory multiple>
+            </div>
+            <button type="submit" class="btn btn-primary">Deploy</button>
+        </form>
+        <div id="deployResult" class="mt-3"></div>
+    </div>
+</div>

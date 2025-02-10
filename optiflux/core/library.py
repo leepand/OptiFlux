@@ -9,19 +9,21 @@ from optiflux.utils.config_loader import load_config
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 
 logger = logging.getLogger("optiflux.ModelLibrary")
 
+
 class ModelLibrary:
     """模型库：集中管理模型配置和实例"""
+
     def __init__(
         self,
         models: Dict[str, Type[BaseModel]],
         config_path: Optional[str] = None,
         cache_dir: str = "optiflux_cache",
-        **cache_kwargs
+        **cache_kwargs,
     ):
         """
         :param models: 模型名称到模型类的映射
@@ -53,7 +55,7 @@ class ModelLibrary:
         for model_name, model_cls in self.models.items():
             user_config = loaded_config.get(model_name, {})
             final_config[model_name] = user_config
-            
+
             # 记录缺失配置警告
             if model_name not in loaded_config:
                 logger.info(f"Using default config for model: {model_name}")
@@ -82,7 +84,9 @@ class ModelLibrary:
 
                     # 注入依赖模型
                     for dep_name in dependencies:
-                        instance.add_dependency(dep_name, self._model_instances[dep_name])
+                        instance.add_dependency(
+                            dep_name, self._model_instances[dep_name]
+                        )
 
                     instance.load()
                     self._model_instances[model_name] = instance
@@ -90,8 +94,12 @@ class ModelLibrary:
                     progress = True  # 标记本轮有模型加载
                     logger.info(f"Model {model_name} loaded successfully.")
                 else:
-                    missing_deps = [dep for dep in dependencies if dep not in loaded_models]
-                    logger.warning(f"Model {model_name} is waiting for dependencies: {missing_deps}")
+                    missing_deps = [
+                        dep for dep in dependencies if dep not in loaded_models
+                    ]
+                    logger.warning(
+                        f"Model {model_name} is waiting for dependencies: {missing_deps}"
+                    )
 
             # 如果本轮没有模型加载，说明存在循环依赖
             if not progress:
@@ -132,13 +140,13 @@ class ModelLibrary:
         # 实例化当前模型
         if model_name not in self.config:
             raise ValueError(f"Missing config for {model_name}")
-        
+
         instance = model_cls(self.config[model_name])
-        
+
         # 注入依赖
         for dep in deps:
             instance.add_dependency(dep, self._model_instances[dep])
-        
+
         instance.load()
         self._model_instances[model_name] = instance
         initialized.add(model_name)
@@ -156,7 +164,7 @@ class ModelLibrary:
         input_data: Any,
         cache_key: Optional[str] = None,
         use_cache: bool = False,  # 添加此参数
-        **kwargs
+        **kwargs,
     ) -> Any:
         """执行预测（带缓存支持）"""
         if use_cache:
@@ -172,7 +180,7 @@ class ModelLibrary:
             self.cache.set(cache_key, result)
 
         return result
-    
+
     # 在 ModelLibrary 类中新增方法
     def predict_batch(
         self,
@@ -180,7 +188,7 @@ class ModelLibrary:
         inputs: List[Any],
         cache_keys: Optional[List[str]] = None,
         use_cache: bool = True,
-        **kwargs
+        **kwargs,
     ) -> List[Any]:
         """批量预测（带缓存支持）"""
         model = self.get_model(model_name)
@@ -199,7 +207,9 @@ class ModelLibrary:
             cached_results = [None] * len(inputs)
 
         # 筛选需要预测的索引
-        need_predict_indices = [i for i, val in enumerate(cached_results) if val is None]
+        need_predict_indices = [
+            i for i, val in enumerate(cached_results) if val is None
+        ]
         need_predict_items = [inputs[i] for i in need_predict_indices]
 
         if need_predict_items:

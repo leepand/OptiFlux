@@ -9,6 +9,7 @@ from ..config import ENV_DIRS
 import traceback
 import socket
 
+
 def get_port_status(port):
     """
     检查端口状态。
@@ -16,7 +17,9 @@ def get_port_status(port):
     :return: 端口状态（running/failed/error）
     """
     try:
-        process = subprocess.run(["lsof", "-i", f":{port}"], capture_output=True, text=True)
+        process = subprocess.run(
+            ["lsof", "-i", f":{port}"], capture_output=True, text=True
+        )
         stdout = process.stdout
         stderr = process.stderr
 
@@ -35,7 +38,8 @@ def is_port_in_use(port):
     :return: True 如果端口被占用，否则 False
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        return sock.connect_ex(('localhost', port)) == 0
+        return sock.connect_ex(("localhost", port)) == 0
+
 
 def start_service(script, timeout=240):
     """
@@ -54,11 +58,14 @@ def start_service(script, timeout=240):
             timeout=timeout,
             check=True,
         )
-        return process.stdout or process.stderr or "Your script is processed successfully."
+        return (
+            process.stdout or process.stderr or "Your script is processed successfully."
+        )
     except subprocess.CalledProcessError as e:
         return f"Error: {e}"
     except subprocess.TimeoutExpired:
         return "Command execution timed out."
+
 
 def wait_until_port_used(port, max_wait_sec=15, interval_sec=0.5):
     """
@@ -76,6 +83,7 @@ def wait_until_port_used(port, max_wait_sec=15, interval_sec=0.5):
         time.sleep(interval_sec)
     return False
 
+
 def generate_start_services_script(env, model_name, model_version):
     """
     生成 start_services.sh 脚本，并按端口生成独立的服务启动脚本。
@@ -85,17 +93,17 @@ def generate_start_services_script(env, model_name, model_version):
     """
     # 构建模型目录
     model_dir = os.path.join(ENV_DIRS.get(env), model_name)
-    model_version_dir=os.path.join(ENV_DIRS.get(env), model_name, model_version)
-    start_script_path = os.path.join(model_version_dir, 'start_services.sh')
+    model_version_dir = os.path.join(ENV_DIRS.get(env), model_name, model_version)
+    start_script_path = os.path.join(model_version_dir, "start_services.sh")
 
     # 如果 start_services.sh 已存在，则跳过
     if os.path.exists(start_script_path):
         print(f"start_services.sh already exists at {start_script_path}")
-        #return
+        # return
 
     # 读取 config.json
-    config_path = os.path.join(model_dir, 'config.json')
-    with open(config_path, 'r') as f:
+    config_path = os.path.join(model_dir, "config.json")
+    with open(config_path, "r") as f:
         config = json.load(f)
 
     # 生成 start_services.sh 内容
@@ -105,13 +113,17 @@ def generate_start_services_script(env, model_name, model_version):
 """
 
     # 生成 recomserver 启动脚本
-    for recom_config in config.get('recomserver', []):
-        script_path = generate_service_script(env, model_name, model_version, 'recomserver', recom_config)
+    for recom_config in config.get("recomserver", []):
+        script_path = generate_service_script(
+            env, model_name, model_version, "recomserver", recom_config
+        )
         script_content += f"sh {script_path} &\n"
 
     # 生成 rewardserver 启动脚本
-    for reward_config in config.get('rewardserver', []):
-        script_path = generate_service_script(env, model_name, model_version, 'rewardserver', reward_config)
+    for reward_config in config.get("rewardserver", []):
+        script_path = generate_service_script(
+            env, model_name, model_version, "rewardserver", reward_config
+        )
         script_content += f"sh {script_path} &\n"
 
     script_content += """
@@ -120,7 +132,7 @@ wait
 """
 
     # 写入 start_services.sh 文件
-    with open(start_script_path, 'w') as f:
+    with open(start_script_path, "w") as f:
         f.write(script_content)
 
     # 赋予脚本执行权限
@@ -128,7 +140,7 @@ wait
     os.chmod(start_script_path, st.st_mode | stat.S_IEXEC)
 
     print(f"Generated start_services.sh at {start_script_path}")
-    
+
 
 def restart_services_handle(env, model_name, model_version):
     """
@@ -140,37 +152,42 @@ def restart_services_handle(env, model_name, model_version):
     """
     try:
         # 构建 config.json 文件路径
-        config_path = os.path.join(ENV_DIRS.get(env), model_name, 'config.json')
+        config_path = os.path.join(ENV_DIRS.get(env), model_name, "config.json")
         if not os.path.exists(config_path):
             return {"status": "error", "message": "Config file not found"}
 
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config = json.load(f)
 
         # 重启 recomserver 服务
         recom_ports = []
-        for recom_config in config.get('recomserver', []):
-            script_path = generate_service_script(env, model_name, model_version, 'recomserver', recom_config)
+        for recom_config in config.get("recomserver", []):
+            script_path = generate_service_script(
+                env, model_name, model_version, "recomserver", recom_config
+            )
             if start_service_with_nohup(script_path):
-                recom_ports.append(recom_config.get('port'))
+                recom_ports.append(recom_config.get("port"))
             time.sleep(5)  # 每个服务启动后停留 5 秒
 
         # 重启 rewardserver 服务
         reward_ports = []
-        for reward_config in config.get('rewardserver', []):
-            script_path = generate_service_script(env, model_name, model_version, 'rewardserver', reward_config)
+        for reward_config in config.get("rewardserver", []):
+            script_path = generate_service_script(
+                env, model_name, model_version, "rewardserver", reward_config
+            )
             if start_service_with_nohup(script_path):
-                reward_ports.append(reward_config.get('port'))
+                reward_ports.append(reward_config.get("port"))
             time.sleep(5)  # 每个服务启动后停留 5 秒
 
         return {
             "status": "success",
             "message": "Services restarted successfully",
             "recom_ports": recom_ports,
-            "reward_ports": reward_ports
+            "reward_ports": reward_ports,
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
 
 def start_service_with_nohup(script_path):
     """
@@ -180,7 +197,9 @@ def start_service_with_nohup(script_path):
     """
     try:
         # 使用 nohup 执行脚本
-        subprocess.Popen(['nohup', script_path, '&'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.Popen(
+            ["nohup", script_path, "&"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         print(f"Started service with script: {script_path}")
         return True
     except Exception as e:
@@ -198,10 +217,12 @@ def generate_service_script(env, model_name, model_version, service_type, config
     :param config: 服务配置（包含 port, workers 等信息）
     :return: 脚本文件路径
     """
-    port = config.get('port')
-    workers = config.get('workers', 1)  # 默认 1 个 worker
+    port = config.get("port")
+    workers = config.get("workers", 1)  # 默认 1 个 worker
     log_file = f"{service_type}_{port}.log"
-    log_path = os.path.join(ENV_DIRS.get(env), model_name, model_version, 'logs', log_file)
+    log_path = os.path.join(
+        ENV_DIRS.get(env), model_name, model_version, "logs", log_file
+    )
     project_root = os.path.join(ENV_DIRS.get(env), model_name, model_version)
 
     # 确保日志目录存在
@@ -226,13 +247,15 @@ gunicorn --workers {workers} \\
 
     # 脚本文件路径
     script_name = f"{service_type}_{port}.sh"
-    script_path = os.path.join(ENV_DIRS.get(env), model_name, model_version, 'scripts', script_name)
+    script_path = os.path.join(
+        ENV_DIRS.get(env), model_name, model_version, "scripts", script_name
+    )
 
     # 确保脚本目录存在
     os.makedirs(os.path.dirname(script_path), exist_ok=True)
 
     # 写入脚本文件
-    with open(script_path, 'w') as f:
+    with open(script_path, "w") as f:
         f.write(script_content)
 
     # 赋予脚本执行权限
@@ -246,7 +269,7 @@ def kill_process_by_port(port):
     """
     根据端口号杀掉相关进程。
     """
-    for proc in psutil.process_iter(['pid', 'name', 'connections']):
+    for proc in psutil.process_iter(["pid", "name", "connections"]):
         try:
             for conn in proc.connections():
                 if conn.laddr.port == port:
@@ -266,16 +289,18 @@ def start_gunicorn_service(env, model_name, model_version, service_type, config)
     :param config: 服务配置（包含 port, workers 等信息）
     :return: 服务端口
     """
-    port = config.get('port')
-    workers = config.get('workers', 1)  # 默认 1 个 worker
+    port = config.get("port")
+    workers = config.get("workers", 1)  # 默认 1 个 worker
     log_file = f"{service_type}_{port}.log"
-    log_path = os.path.join(ENV_DIRS.get(env), model_name, model_version, 'logs', log_file)
+    log_path = os.path.join(
+        ENV_DIRS.get(env), model_name, model_version, "logs", log_file
+    )
 
     # 确保日志目录存在
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     # 如果端口被占用，杀掉占用端口的进程
-    for proc in psutil.process_iter(['pid', 'name', 'connections']):
+    for proc in psutil.process_iter(["pid", "name", "connections"]):
         try:
             for conn in proc.connections():
                 if conn.laddr.port == port:
@@ -287,15 +312,20 @@ def start_gunicorn_service(env, model_name, model_version, service_type, config)
 
     # 启动 gunicorn 服务
     command = [
-        'gunicorn',
-        '--workers', str(workers),
-        '--bind', f':{port}',
-        '--worker-class', 'uvicorn.workers.UvicornWorker',
-        '--preload',
-        f'src.{service_type}:app',
-        '--log-file', log_path,
-        '--log-level', 'info',
-        '--daemon'  # 后台运行
+        "gunicorn",
+        "--workers",
+        str(workers),
+        "--bind",
+        f":{port}",
+        "--worker-class",
+        "uvicorn.workers.UvicornWorker",
+        "--preload",
+        f"src.{service_type}:app",
+        "--log-file",
+        log_path,
+        "--log-level",
+        "info",
+        "--daemon",  # 后台运行
     ]
 
     try:

@@ -1,0 +1,17 @@
+<!-- templates/index.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+    <!-- Deployment -->
+    {% include 'deploy.html' %}
+
+    <!-- Log Files -->
+    {% include 'log_files.html' %}
+
+    <!-- Log Content -->
+    {% include 'log_content.html' %}
+
+    <!-- Model Versions -->
+    {% include 'model_versions.html' %}
+{% endblock %}

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiFlux - AI 驱动个性化平台</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+            position: relative;
+        }
+        .hero-section h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .hero-section p {
+            font-size: 1.25rem;
+            font-weight: 300;
+            margin-bottom: 40px;
+        }
+        .cta-button {
+            background-color: #ff6f61;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: white;
+            border-radius: 50px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .cta-button:hover {
+            background-color: #ff4a3d;
+            text-decoration: none;
+            color: white;
+        }
+        .features-section {
+            padding: 80px 0;
+            background-color: white;
+        }
+        .feature-card {
+            text-align: center;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card h3 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+        .feature-card p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+        .testimonial {
+            background-color: #f1f1f1;
+            padding: 50px 0;
+            text-align: center;
+        }
+        .testimonial h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+        .testimonial-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 600px;
+            position: relative;
+        }
+        .testimonial-card .quote-icon {
+            font-size: 2rem;
+            color: #6a11cb;
+            margin-bottom: 20px;
+        }
+        .testimonial-card p {
+            font-size: 1.25rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .testimonial-card .client-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .testimonial-card .client-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        .testimonial-card .client-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .testimonial-card .client-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+        }
+        .testimonial-card .client-title {
+            font-size: 1rem;
+            color: #777;
+        }
+        .testimonial-carousel {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1>OptiFlux</h1>
+            <p>一流的 AI 驱动应用个性化平台</p>
+            <p>通过利用我们 AI 驱动的 MLOps：OptiFlux，为游戏玩家提供个性化优惠套餐/体验策略，满足企业最重要的 LTV 提升需求。</p>
+            <a href="/product" class="cta-button">进入产品界面</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-robot fa-3x mb-3"></i>
+                        <h3>AI 驱动</h3>
+                        <p>利用先进的 AI/RL 技术，为用户提供精准的个性化推荐。</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-cogs fa-3x mb-3"></i>
+                        <h3>MLOps 支持</h3>
+                        <p>通过 OptiFlux 的 MLOps 能力，实现模型的高效部署与管理。</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <h3>提升 LTV</h3>
+                        <p>通过个性化体验策略的有效触发，显著提升玩家的终身价值（LTV）。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section class="testimonial">
+        <div class="container">
+            <h2>客户评价</h2>
+            <div class="testimonial-carousel">
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left quote-icon"></i>
+                    <p>"OptiFlux 帮助我们显著提升了用户留存率和 LTV。"</p>
+                    <div class="client-info">
+                        <div class="client-avatar">
+                            <img src="https://via.placeholder.com/50" alt="Client Avatar">
+                        </div>
+                        <div>
+                            <p class="client-name">某游戏公司 CEO</p>
+                            <p class="client-title">游戏公司</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left quote-icon"></i>
+                    <p>"通过 OptiFlux，我们的个性化推荐系统变得更加智能和高效。"</p>
+                    <div class="client-info">
+                        <div class="client-avatar">
+                            <img src="https://via.placeholder.com/50" alt="Client Avatar">
+                        </div>
+                        <div>
+                            <p class="client-name">某科技公司 CTO</p>
+                            <p class="client-title">科技公司</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left quote-icon"></i>
+                    <p>"OptiFlux 的 AI 驱动平台为我们的业务带来了显著的增长。"</p>
+                    <div class="client-info">
+                        <div class="client-avatar">
+                            <img src="https://via.placeholder.com/50" alt="Client Avatar">
+                        </div>
+                        <div>
+                            <p class="client-name">某初创公司 CEO</p>
+                            <p class="client-title">初创公司</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 OptiFlux. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

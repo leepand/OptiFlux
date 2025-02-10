@@ -1,6 +1,7 @@
 from diskcache import Cache
 from typing import Any, Optional
 
+
 class ModelCache:
     def __init__(self, cache_dir: str, size_limit: int = 10**9, **kwargs):
         self.cache = Cache(cache_dir, size_limit=size_limit, **kwargs)

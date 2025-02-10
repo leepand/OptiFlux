@@ -3,6 +3,7 @@ import json
 
 from ..config import ENV_DIRS
 
+
 def ensure_env_dir(env):
     """确保环境目录存在"""
     env_dir = ENV_DIRS.get(env)
@@ -10,6 +11,7 @@ def ensure_env_dir(env):
         raise ValueError(f"Invalid environment: {env}")
     os.makedirs(env_dir, exist_ok=True)
     return env_dir
+
 
 def load_or_initialize_config(config_path):
     """
@@ -19,22 +21,12 @@ def load_or_initialize_config(config_path):
         "current_version": "v1.0.0",
         "services": {
             "recomserver": [
-                {
-                    "port": 8080,
-                    "ip": "127.0.0.1",
-                    "status": "stopped",
-                    "pid": None
-                }
+                {"port": 8080, "ip": "127.0.0.1", "status": "stopped", "pid": None}
             ],
             "rewardserver": [
-                {
-                    "port": 9090,
-                    "ip": "127.0.0.1",
-                    "status": "stopped",
-                    "pid": None
-                }
-            ]
-        }
+                {"port": 9090, "ip": "127.0.0.1", "status": "stopped", "pid": None}
+            ],
+        },
     }
 
     if not os.path.exists(config_path) or os.path.getsize(config_path) == 0:

@@ -6,6 +6,7 @@ import requests
 from ..utils.file_utils import zip_directory
 from ..config import SERVER_URL
 
+
 def deploy_code(local_path, env):
     """部署代码到远程服务器"""
     # 打包代码
@@ -18,9 +19,9 @@ def deploy_code(local_path, env):
         return
 
     # 上传代码
-    with open(zip_path, 'rb') as f:
-        files = {'file': f}
-        data = {'env': env}  # 指定部署环境
+    with open(zip_path, "rb") as f:
+        files = {"file": f}
+        data = {"env": env}  # 指定部署环境
         response = requests.post(f"{SERVER_URL}/deploy", files=files, data=data)
 
     # 清理临时文件
@@ -32,15 +33,24 @@ def deploy_code(local_path, env):
     else:
         print(f"Deployment failed: {response.text}")
 
+
 def main():
     """命令行入口点"""
     parser = argparse.ArgumentParser(description="OptiFlux Client")
-    parser.add_argument("--path", required=True, help="Path to the local code directory")
-    parser.add_argument("--env", required=True, choices=["dev", "preprod", "prod"], help="Target environment")
+    parser.add_argument(
+        "--path", required=True, help="Path to the local code directory"
+    )
+    parser.add_argument(
+        "--env",
+        required=True,
+        choices=["dev", "preprod", "prod"],
+        help="Target environment",
+    )
     args = parser.parse_args()
 
     result = deploy_code(args.path, args.env)
     print(result)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

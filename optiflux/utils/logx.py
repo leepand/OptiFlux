@@ -16,7 +16,9 @@ def get_bj_day_time(sec, what):
 # 初始化日志记录器
 def init_logging_handlers(log_name, log_dir=LOG_DIR):
     formatter = logging.Formatter("%(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S")
-    handler = TimedRotatingFileHandler(f"{log_dir}/{log_name}", when="midnight", backupCount=7,encoding='utf-8')
+    handler = TimedRotatingFileHandler(
+        f"{log_dir}/{log_name}", when="midnight", backupCount=7, encoding="utf-8"
+    )
     handler.setFormatter(formatter)
     logger = logging.getLogger(log_name)
     logger.addHandler(handler)
@@ -42,12 +44,14 @@ def format_key_value(msg):
     msg.append(["_ts", int(time.time())])
     return "&".join([f"{k}={v}" for k, v in msg])
 
+
 def do_format2(msg):
     ret = ""
     msg.append(["_ts", int(time.time())])
     for i in msg:
         ret += "%s=%s," % (i[0], str(i[1]))
     return ret[:-1]
+
 
 def do_format(msg):
     """通用日志消息格式化器，带时间戳，支持中文"""
@@ -61,6 +65,7 @@ def do_format(msg):
     formatted.append(f"_ts={int(time.time())}")
     return "|".join(formatted)
 
+
 # 格式化日志消息为逗号分隔的列表，包含时间戳
 def format_csv(msg):
     msg.insert(0, int(time.time()))
@@ -69,16 +74,16 @@ def format_csv(msg):
 
 # 专门的日志记录函数
 def log_error(logger_name, error_msg):
-    logger_name=f"{logger_name}_errors"
+    logger_name = f"{logger_name}_errors"
     logger = logging.getLogger(f"{logger_name}.log")
-    formatted_msg = do_format(error_msg) #format_key_value([["error", error_msg]])
+    formatted_msg = do_format(error_msg)  # format_key_value([["error", error_msg]])
     getattr(logger, "info")(formatted_msg)
 
 
 def log_info(logger_name, info_msg):
-    logger_name=f"{logger_name}_debugs"
+    logger_name = f"{logger_name}_debugs"
     logger = logging.getLogger(f"{logger_name}.log")
-    formatted_msg = do_format(info_msg) #format_key_value([["info", info_msg]])
+    formatted_msg = do_format(info_msg)  # format_key_value([["info", info_msg]])
     getattr(logger, "info")(formatted_msg)
 
 
@@ -93,5 +98,6 @@ def log_server(msg):
     server_logger = logging.getLogger("server")
     formatted_msg = format_key_value(msg)
     server_logger.info(formatted_msg)
+
 
 init()

@@ -5,12 +5,12 @@ import logging
 # 配置日志
 logger = logging.getLogger("optiflux.BaseModel")
 
+
 class BaseModel(ABC):
     # 类属性：定义默认配置（子类可覆盖）
     """模型基类（支持依赖注入）"""
     DEFAULT_CONFIG: Dict[str, Any] = {}
     depends: List[str] = []  # 声明依赖的模型名称（子类可覆盖）
-
 
     def __init__(self, config: Dict[str, Any]):
         """
@@ -19,9 +19,9 @@ class BaseModel(ABC):
         logger.info(f"Initializing model with config: {config}")
         # 合并默认配置和用户配置
         self.config = {**self.DEFAULT_CONFIG, **(config or {})}
-        self._depends: Dict[str, 'BaseModel'] = {}  # 初始化依赖字典
+        self._depends: Dict[str, "BaseModel"] = {}  # 初始化依赖字典
 
-    def add_dependency(self, name: str, model: 'BaseModel'):
+    def add_dependency(self, name: str, model: "BaseModel"):
         self._depends[name] = model
 
     @abstractmethod

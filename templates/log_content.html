@@ -1,0 +1,15 @@
+<!-- templates/log_content.html -->
+
+<div class="card mt-3" id="logContentCard" style="display: none;">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Log Content: <span id="currentLogFile"></span></span>
+        <button class="btn btn-secondary btn-sm" onclick="hideLogContent()">Back</button>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label for="logLines" class="form-label">Number of Lines:</label>
+            <input type="number" id="logLines" class="form-control" value="100" min="1">
+        </div>
+        <pre id="logContent"></pre>
+    </div>
+</div>
