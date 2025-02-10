@@ -1,15 +1,15 @@
 <div class="card mt-3">
     <div class="card-header">
-        Code Deployment
+        Model Deployment
     </div>
     <div class="card-body">
-        <form id="deployForm" enctype="multipart/form-data">
+        <form id="deployForm" class="form-container" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="envSelect" class="form-label">Environment</label>
                 <select class="form-select" id="envSelect" name="env">
-                    <option value="dev">Dev</option>
+                    <option value="dev">Development</option>
                     <option value="preprod">Preprod</option>
-                    <option value="prod">Prod</option>
+                    <option value="prod">Production</option>
                 </select>
             </div>
             <div class="mb-3">
@@ -35,11 +35,11 @@
                     </label>
                 </div>
             </div>
-            <div class="mb-3" id="fileUploadSection">
+            <div class="mb-3 file-upload-section" id="fileUploadSection">
                 <label for="codeFile" class="form-label">Upload File</label>
                 <input class="form-control" type="file" id="codeFile" name="file">
             </div>
-            <div class="mb-3" id="folderUploadSection" style="display: none;">
+            <div class="mb-3 file-upload-section" id="folderUploadSection" style="display: none;">
                 <label for="codeFolder" class="form-label">Upload Folder</label>
                 <input class="form-control" type="file" id="codeFolder" name="folder" webkitdirectory directory multiple>
             </div>

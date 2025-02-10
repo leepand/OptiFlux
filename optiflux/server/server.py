@@ -453,6 +453,9 @@ def get_model_names():
                         'rewardserver': rewardserver,
                     })
 
+        # 根据时间戳排序，最新的排在前面
+        model_names.sort(key=lambda x: x['timestamp'], reverse=True)
+
         # 分页逻辑
         start = (page - 1) * per_page
         end = start + per_page

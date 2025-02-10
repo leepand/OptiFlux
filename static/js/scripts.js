@@ -1522,13 +1522,13 @@ function loadOperationLogs(page = 1) {
                 const paginationContent = `
                     <li class="page-item ${prevDisabled ? 'disabled' : ''}">
                         <a class="page-link" href="#" onclick="loadOperationLogs(${currentLogPage - 1})">
-                            <i class="bi bi-arrow-left"></i> 上一页
+                            <i class="bi bi-arrow-left"></i> Previous
                         </a>
                     </li>
                     ${pageButtons.join('')}
                     <li class="page-item ${nextDisabled ? 'disabled' : ''}">
                         <a class="page-link" href="#" onclick="loadOperationLogs(${currentLogPage + 1})">
-                            下一页 <i class="bi bi-arrow-right"></i>
+                            Next <i class="bi bi-arrow-right"></i>
                         </a>
                     </li>
                 `;

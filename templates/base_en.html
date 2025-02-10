@@ -14,8 +14,7 @@
     <!-- SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     
-    <!-- Favicon -->
-    <link rel="icon" href="{{ url_for('static', filename='pics/favicon.ico') }}" type="image/x-icon">
+    
     <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
 </head>
 <body>
@@ -29,22 +28,22 @@
                             
                             <li class="nav-item">
                                 <a class="nav-link active" href="#" onclick="showSection('deploy')">
-                                    <i class="bi bi-upload me-2"></i>模型部署
+                                    <i class="bi bi-upload me-2"></i>Model Deployment
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#" onclick="showSection('logs')">
-                                    <i class="bi bi-graph-up me-2"></i>服务监控
+                                    <i class="bi bi-graph-up me-2"></i>Service Monitoring
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#" onclick="showSection('modelVersions')">
-                                    <i class="bi bi-diagram-3 me-2"></i>版本管理
+                                    <i class="bi bi-diagram-3 me-2"></i>Version Management
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#" onclick="showSection('operationLogs')">
-                                    <i class="bi bi-gear me-2"></i>操作审计
+                                    <i class="bi bi-gear me-2"></i>Operational Audits
                                 </a>
                             </li>
                         </ul>
