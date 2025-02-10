@@ -32,10 +32,55 @@ OptiFlux/
 └── requirements.txt     # 项目依赖
 ```
 
-## Usage
+## 使用方法
 
-### Start the Server
+### OptiFlux 提供了一个命令行工具，可以通过以下命令使用：
 
+```bash
+optiflux <command> [options]
+```
+
+#### 可用命令
+
+init
+初始化环境配置。
+
+```bash
+optiflux init [-f FILE] [--force]
+```
+- -f, --file: 生成的环境文件名 (默认: .env)。
+- --force: 强制覆盖已存在文件。
+
+示例：
+
+```bash
+optiflux init --file .env --force
+```
+create-project
+创建模型项目。
+
+```bash
+optiflux create-project --name <model_name> [--version <version>]
+```
+- --name: 模型名称 (必需)。
+- --version: 版本号 (默认: 0.0)。
+示例：
+
+```bash
+optiflux create-project --name mymodel --version 1.0
+```
+#### 示例工作流程
+1. 初始化环境配置：
+```bash
+optiflux init --file .env --force
+```
+2. 创建模型项目：
+```bash
+optiflux create-project --name mymodel --version 1.0
+```
+这将生成一个包含默认目录结构和配置文件的项目。
+
+## 启动前端管理-服务
 optiflux-server
 python -m optiflux.server.server --env prod  -g
 python -m optiflux.server.server --env dev
