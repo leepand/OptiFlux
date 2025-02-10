@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OptiFlux MLOps{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <!-- JSON Editor CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.2/dist/jsoneditor.min.css" rel="stylesheet">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    
+    
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 bg-light sidebar">
+                <div class="sidebar-sticky pt-3">
+                    <div class="mb-4">
+                        <ul class="nav flex-column">
+                            
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" onclick="showSection('deploy')">
+                                    <i class="bi bi-upload me-2"></i>Deploy Model
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('logs')">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Logs
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('modelVersions')">
+                                    <i class="bi bi-diagram-3 me-2"></i>Model Versions
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" onclick="showSection('operationLogs')">
+                                    <i class="bi bi-gear me-2"></i>Operation Records
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                
+                <!-- 在右上角添加用户信息和注销按钮 -->
+                <div class="header-right">
+                    <div class="dropdown user-menu">
+                        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i>
+                            {% if '_user_id' in session %}
+                                Welcome, {{ user.username }}
+                            {% else %}
+                               aktecванонс
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if '_user_id' in session %}
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">个人信息</a></li>
+                                <li>
+                                    <form action="{{ url_for('logout') }}" method="POST">
+                                        <button type="submit" class="dropdown-item">注销</button>
+                                    </form>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Header -->
+                {% include 'header.html' %}
+                
+                <!-- Auth Section (动态加载登录/注册内容) -->
+
+
+                <!-- Dynamic Content Sections -->
+                <div id="deploySection" class="content-section">
+                    {% include 'deploy.html' %}
+                </div>
+                <div id="logsSection" class="content-section" style="display: none;">
+                    {% include 'log_files.html' %}
+                    {% include 'log_content.html' %} 
+                </div>
+                <div id="modelVersionsSection" class="content-section" style="display: none;">
+                    {% include 'model_versions.html' %}
+                </div>
+                
+                <div id="operationLogsSection" class="content-section" style="display: none;">
+                    {% include 'operation_logs.html' %}
+                </div>
+
+                <!-- Footer -->
+                {% include 'footer.html' %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JSON Editor JS -->
+    <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.2/dist/jsoneditor.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>
