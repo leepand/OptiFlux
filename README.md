@@ -43,6 +43,7 @@ optiflux <command> [options]
 #### 可用命令
 
 init
+
 初始化环境配置。
 
 ```bash
@@ -57,6 +58,7 @@ optiflux init [-f FILE] [--force]
 optiflux init --file .env --force
 ```
 create-project
+
 创建模型项目。
 
 ```bash
@@ -78,6 +80,57 @@ optiflux init --file .env --force
 ```bash
 optiflux create-project --name mymodel --version 1.0
 ```
+
+**项目结构**
+
+生成的模型项目结构如下：
+
+```bash
+mymodel/
+├── 0.1/
+│   ├── config.yml
+│   ├── requirements.txt
+│   ├── README.md
+│   └── src/
+│       ├── __init__.py
+│       ├── decision_module.py
+│       ├── strategy_module.py
+│       ├── model.py
+│       ├── recomserver.py
+│       ├── rewardserver.py
+│       └── utils/
+│           ├── __init__.py
+│           ├── config_loader.py
+│           └── validation.py
+└── .gitignore
+```
+**配置文件**
+
+生成的 .env 文件包含以下默认配置：
+
+```bash
+# OptiFlux 环境配置
+# 服务器基础配置
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8912
+
+# 模型目录配置
+DEV_ENV_DIR=./models/dev
+PREPROD_ENV_DIR=./models/preprod
+PROD_ENV_DIR=./models/prod
+
+# 日志配置
+LOG_DIR=./logs
+
+# Flask 开发模式配置
+FLASK_DEBUG=true
+
+# Gunicorn 生产模式配置
+GUNICORN_WORKERS=4
+GUNICORN_TIMEOUT=30
+GUNICORN_LOGLEVEL=info
+```
+
 这将生成一个包含默认目录结构和配置文件的项目。
 
 ## 启动前端管理-服务
