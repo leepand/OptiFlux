@@ -13,23 +13,26 @@ if len(sys.argv) != 2:
 db_path = sys.argv[1]
 Base = declarative_base()
 
+
 # 定义 User 模型
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = "user"
     id = Column(Integer, primary_key=True)
     username = Column(String(80), unique=True, nullable=False)
     password_hash = Column(String(120), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    role = Column(String(20), nullable=False, default='viewer')
+    role = Column(String(20), nullable=False, default="viewer")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
+
 # 创建数据库连接
-engine = create_engine(f'sqlite:///{db_path}')
+engine = create_engine(f"sqlite:///{db_path}")
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
+
 
 def add_admin_user(username, password):
     # 检查用户名是否已存在
@@ -39,7 +42,7 @@ def add_admin_user(username, password):
         return
 
     # 创建新用户
-    admin_user = User(username=username, role='admin')
+    admin_user = User(username=username, role="admin")
     admin_user.set_password(password)
     session.add(admin_user)
 
@@ -52,6 +55,7 @@ def add_admin_user(username, password):
     except Exception as e:
         session.rollback()
         print(f"An unexpected error occurred: {e}")
+
 
 if __name__ == "__main__":
     # 添加管理员用户
