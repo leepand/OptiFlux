@@ -758,6 +758,12 @@ def get_model_versions_nn():
         # 扫描模型版本目录
         model_versions = []
         for version in os.listdir(model_dir):
+            # 过滤掉隐藏文件夹和已知的非必要文件夹
+            if version.startswith(".") or version in [
+                "__pycache__",
+                ".ipynb_checkpoints",
+            ]:
+                continue
             version_dir = os.path.join(model_dir, version)
             if os.path.isdir(version_dir):
                 version_info = {
