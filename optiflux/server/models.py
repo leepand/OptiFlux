@@ -10,6 +10,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    role = db.Column(db.String(20), nullable=False, default='viewer')  # 新字段：用户角色
 
     def __repr__(self):
         return f"<User {self.username}>"
@@ -20,6 +21,13 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+    def is_admin(self):
+        """检查用户是否为管理员"""
+        return self.role == 'admin'
+    
+    def can_ops(self):
+        """检查用户是否有权操作"""
+        return self.role in ['admin','operator']
     
 
 # 定义操作日志模型

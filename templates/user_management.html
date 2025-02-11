@@ -1,0 +1,77 @@
+<div class="container-fluid pt-4">
+    <!-- 新增用户按钮 -->
+    <div class="mb-3">
+        <button type="button" class="btn btn-success" onclick="openUserForm()">新增用户</button>
+    </div>
+
+    <!-- 状态指示器 -->
+    <div id="userManagementLoader" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="text-muted mt-2">正在加载用户数据...</p>
+    </div>
+
+    <!-- 错误显示区（初始隐藏） -->
+    <div id="userManagementError" class="alert alert-danger d-none" role="alert" aria-live="polite"></div>
+
+    <!-- 主内容容器（动态生成） -->
+    <div id="userManagementContent" aria-live="polite"></div>
+</div>
+
+<!-- 统一的用户表单模态框 -->
+<div class="modal fade" id="userFormModal" tabindex="-1" aria-labelledby="userFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="userFormModalLabel">用户表单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm" onsubmit="handleUserSubmit(event)">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">角色</label>
+                        <select class="form-select" id="role" required>
+                            <option value="admin">管理员</option>
+                            <option value="operator">操作员</option>
+                            <option value="viewer">观察员</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="userForm" class="btn btn-primary" id="submitButton">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmationModalLabel">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                您确定要删除该用户吗？此操作无法撤销！
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">确认删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+

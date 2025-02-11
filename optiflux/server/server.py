@@ -80,7 +80,7 @@ os.makedirs(cache_dir, exist_ok=True)
 cache = diskcache.Cache(cache_dir)
 
 
-#deploy()
+deploy()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -101,6 +101,7 @@ def session_handler():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=60*24*7)
 
+
 # 添加日志的辅助函数
 def add_log(action, details=None, user_id=None):
     """记录操作日志"""
@@ -117,6 +118,186 @@ def add_log(action, details=None, user_id=None):
 # app.add_url_rule('/logs', 'logs', get_logs, methods=['GET'])
 app.add_url_rule("/log_files", "log_files", get_log_files, methods=["GET"])
 app.add_url_rule("/log_content", "log_content", get_log_content, methods=["GET"])
+
+def admin_required(f):
+    """装饰器：确保用户是管理员"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.can_ops():
+            abort(403)  # 返回 403 禁止访问
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/admin')
+@admin_required
+def admin_page():
+    """只有管理员可以访问的页面"""
+    return "Welcome, Admin!"
+
+# ---------------------------- 工具函数 ----------------------------
+
+def validate_user_data(data, is_new_user=False):
+    """校验用户数据"""
+    required_fields = ['username', 'role']
+    if is_new_user:
+        required_fields.append('password')
+
+    # 检查必填字段
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return False, f'缺少必要字段: {field}'
+
+    # 校验角色有效性
+    valid_roles = ['admin', 'operator', 'viewer']
+    if data['role'] not in valid_roles:
+        return False, '无效的用户角色'
+
+    # 校验密码复杂度
+    if is_new_user and len(data['password']) < 3:
+        return False, '密码至少需要3个字符'
+
+    # 校验用户名是否已被占用
+    if is_new_user and User.query.filter_by(username=data['username']).first():
+        return False, '用户名已存在'
+
+    return True, '数据校验通过'
+
+# ---------------------------- 用户管理路由 ----------------------------
+from datetime import datetime
+@app.after_request
+def add_cors_headers(response):
+        response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+        return response
+
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    info=[{
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'created_at': user.created_at.strftime('%Y-%m-%d %H:%M')  # 格式化时间戳
+            } for user in users]
+    return jsonify(info)
+
+@app.route('/users/delete/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def handle_delete(user_id):
+    """删除用户（与前端POST删除方式匹配）"""
+    if current_user.id == user_id:
+        return jsonify({'status': 'error', 'message': '不能删除当前登录账户'}), 400
+
+    # user = User.query.get(user_id)
+    user=db.session.get(User, int(user_id)) 
+    if not user:
+        return jsonify({'status': 'error', 'message': '用户不存在'}), 404
+
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        user_id2 = session.get("_user_id")
+        if user_id2:
+            username=get_user_name(session)
+            add_log("删除用户", f"管理员:{username} 删除了用户:{user.username}", user_id2)
+        return jsonify({'status': 'success', 'message': '用户已删除'}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"删除失败: {str(e)}")
+        return jsonify({'status': 'error', 'message': '删除操作失败'}), 500
+
+
+from sqlalchemy.exc import IntegrityError
+
+
+@app.route('/users/save', methods=['POST'])
+@login_required
+@admin_required
+def handle_save():
+    """统一处理新增/编辑保存（匹配前端表单提交）"""
+    data = request.get_json()
+    user_id = data.get('id')
+
+    # 输入数据校验
+    required_fields = ['username', 'password', 'role']
+    if not all(field in data for field in required_fields):
+        return jsonify({'status': 'error', 'message': '缺少必要字段'}), 400
+
+    # 角色有效性校验
+    valid_roles = ['admin', 'operator', 'viewer']
+    if data['role'] not in valid_roles:
+        return jsonify({'status': 'error', 'message': '无效的用户角色'}), 400
+
+    # 密码复杂度校验
+    if len(data['password']) < 3:
+        return jsonify({'status': 'error', 'message': '密码至少3个字符'}), 400
+
+    # 判断是新增还是更新
+    if user_id:  # 更新操作
+        user = db.session.get(User, int(user_id))
+        if not user:
+            return jsonify({'status': 'error', 'message': '用户不存在'}), 404
+
+        # 使用不区分大小写的查询，并排除当前用户
+        existing = User.query.filter(
+            User.username.ilike(data['username']),
+            User.id != user.id
+        ).first()
+        if existing:
+            return jsonify({'status': 'error', 'message': '用户名已被占用'}), 400
+    else:  # 新增操作
+        # 使用不区分大小写的查询
+        if User.query.filter(User.username.ilike(data['username'])).first():
+            return jsonify({'status': 'error', 'message': '用户名已存在'}), 400
+        user = User()
+
+    try:
+        user.username = data['username'].strip()
+        user.role = data['role']
+        user.set_password(data['password'])
+        ops_type="update"
+        if not user_id:
+            ops_type="add"
+            db.session.add(user)
+
+        db.session.commit()
+        
+        user_id2 = session.get("_user_id")
+        if user_id2:
+            username=get_user_name(session)
+            if ops_type=="update":
+                add_log("更新用户", f"管理员:{username} 更新了用户:{user.username}", user_id2)
+            else:
+                add_log("新增用户", f"管理员:{username} 新增了用户:{user.username}", user_id2)
+
+        return jsonify({
+            'status': 'success',
+            'message': '用户已保存',
+            'user_id': user.id
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"保存失败: {str(e)}")
+        return jsonify({'status': 'error', 'message': '保存用户失败'}), 500
+
+# ---------------------------- 工具函数 ----------------------------
+@app.route('/users/<int:user_id>', methods=['GET'])  # 显式声明 GET
+@login_required
+@admin_required
+def get_single_user(user_id):
+    """获取单个用户数据（编辑时使用）"""
+    user_id=int(user_id)
+    # user = User.query.get(user_id)  # 改用 get 避免 404 导致 500 错误
+    user=db.session.get(User, int(user_id)) 
+    if not user:
+        return jsonify({'status': 'error', 'message': '用户不存在'}), 404
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'role': user.role
+    })
+
 
 
 def get_user_name(session):
@@ -151,6 +332,7 @@ def login_required(f):
 
 @app.route("/deploy", methods=["POST"])
 @login_required
+@admin_required
 def deploy():
     """处理代码部署请求"""
     try:
@@ -304,17 +486,6 @@ def register():
             return redirect(url_for("login"))
     return render_template("register.html")
 
-
-@app.route("/operation_records2", methods=["GET"])
-def get_operation_records2():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"status": "error", "message": "未登录"}), 401
-
-    logs = OperationLog.query.filter_by(user_id=user_id).order_by(desc(OperationLog.timestamp)).all()
-    logs_data = [{"id": log.id, "action": log.action, "details": log.details, "timestamp": log.timestamp} for log in logs]
-    return jsonify({"status": "success", "logs": logs_data}), 200
-
 @app.route("/operation_records", methods=["GET"])
 def get_operation_records():
     # 鉴权验证
@@ -421,7 +592,6 @@ def get_model_names():
                     versions = [v for v in os.listdir(model_dir) if os.path.isdir(os.path.join(model_dir, v))]
                     version_count = len(versions)
                     max_version = max(versions, default='None')
-                    #total_size = sum(os.path.getsize(os.path.join(model_dir, f)) for f in os.listdir(model_dir) if os.path.isfile(os.path.join(model_dir, f)))
                     total_size = 0
 
                     # 计算文件大小
@@ -432,7 +602,6 @@ def get_model_names():
                                 try:
                                     file_size = os.path.getsize(file_path)
                                     total_size += file_size
-                                    print(f"File: {file_path}, Size: {file_size}")
                                 except Exception as e:
                                     print(f"Error getting size for file {file_path}: {e}")
 
@@ -451,6 +620,7 @@ def get_model_names():
                         'serving_version': current_version,
                         'recomserver': recomserver,
                         'rewardserver': rewardserver,
+                        'timestamp': latest_timestamp  # 添加时间戳用于排序
                     })
 
         # 根据时间戳排序，最新的排在前面
@@ -476,24 +646,6 @@ def get_model_names():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-
-@app.route("/model_names22", methods=["GET"])
-def get_model_names22():
-    """
-    获取某个环境下的所有 model_name，支持分页。
-    """
-    env = request.args.get("env")
-    page = int(request.args.get('page', 1))  # 默认第一页
-    per_page = int(request.args.get('per_page', 10))  # 默认每页 10 条
-
-    if not env or env not in ENV_DIRS:
-        return jsonify({"status": "error", "message": "Invalid environment"}), 400
-
-    result = scan_model_names(env, page=page, per_page=per_page)
-
-    return jsonify({"status": "success", **result})
 
 
 @app.route('/model_versions_new', methods=['GET'])
@@ -611,24 +763,6 @@ def get_model_versions_nn():
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
-def check_service_status222(port):
-    """
-    检查服务端口状态。
-    :param port: 端口号
-    :return: 状态（Running/Stopped）
-    """
-    if not port:
-        return "Stopped"
-
-    for proc in psutil.process_iter(['pid', 'name', 'connections']):
-        try:
-            for conn in proc.connections():
-                if conn.laddr.port == port:
-                    return "Running"
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            continue
-    return "Stopped"
-
 import socket
 
 def check_service_status( port,host="0.0.0.0"):
@@ -656,90 +790,6 @@ def get_directory_size(directory):
             fp = os.path.join(dirpath, f)
             total_size += os.path.getsize(fp)
     return total_size
-
-@app.route('/restart_version', methods=['POST'])
-def restart_version():
-    """
-    重启指定版本的服务实例。
-    """
-    env = request.args.get('env')
-    model_name = request.args.get('model_name')
-    model_version = request.args.get('model_version')
-    service_name = request.args.get('service')  # 可选参数，指定重启的服务
-    instance_index = request.args.get('instance_index', type=int)  # 可选参数，指定重启的实例索引
-
-    if not env or not model_name or not model_version:
-        return jsonify({"status": "error", "message": "Missing parameters"}), 400
-
-    try:
-        # 构建 config.json 文件路径
-        config_dir = os.path.join(ENV_DIRS.get(env), model_name)
-        config_path = os.path.join(config_dir, "config.json")
-
-        # 如果目录不存在，则创建目录
-        os.makedirs(config_dir, exist_ok=True)
-
-        # 加载或初始化配置
-        config = load_or_initialize_config(config_path)
-
-        # 更新当前服务中的版本
-        config["current_version"] = model_version
-
-        # 重启服务实例
-        if service_name:
-            if service_name not in config["services"]:
-                return jsonify({"status": "error", "message": f"Service {service_name} not found"}), 404
-
-            if instance_index is not None:
-                # 重启指定实例
-                if instance_index < 0 or instance_index >= len(config["services"][service_name]):
-                    return jsonify({"status": "error", "message": f"Invalid instance index {instance_index}"}), 400
-                restart_service_instance(env, model_name, model_version, service_name, instance_index, config)
-            else:
-                # 重启所有实例
-                for index in range(len(config["services"][service_name])):
-                    restart_service_instance(env, model_name, model_version, service_name, index, config)
-        else:
-            # 重启所有服务的所有实例
-            for service in config["services"]:
-                for index in range(len(config["services"][service])):
-                    restart_service_instance(env, model_name, model_version, service, index, config)
-
-        # 保存更新后的配置
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
-
-        return jsonify({"status": "success", "message": "Version restarted successfully"})
-    except Exception as e:
-        traceback.print_exc()  # 打印堆栈跟踪
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-def restart_service_instance(env, model_name, model_version, service_name, instance_index, config):
-    """
-    重启指定服务的某个实例。
-    """
-    try:
-        service_instances = config["services"][service_name]
-        instance_config = service_instances[instance_index]
-
-        # 停止当前实例
-        if instance_config["status"] == "running" and instance_config["pid"]:
-            os.kill(instance_config["pid"], signal.SIGTERM)  # 终止进程
-            instance_config["status"] = "stopped"
-            instance_config["pid"] = None
-
-        # 启动实例
-        pid = start_service_process(env, model_name, model_version, service_name, instance_config)
-        instance_config["status"] = "running"
-        instance_config["pid"] = pid
-
-        print(f"Service {service_name} instance {instance_index} restarted successfully with PID {pid}")
-    except Exception as e:
-        traceback.print_exc()  # 打印堆栈跟踪
-        print(f"Error restarting service {service_name} instance {instance_index}: {e}")
-        instance_config["status"] = "error"
-        instance_config["pid"] = None
 
 @app.route('/service_instance_status', methods=['GET'])
 def service_instance_status():
@@ -868,6 +918,7 @@ def get_config():
 
 @app.route('/update_config', methods=['POST'])
 @login_required
+@admin_required
 def update_config():
     """
     更新配置文件内容。
@@ -898,27 +949,13 @@ def update_config():
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
-def check_service_status2(port):
-    """
-    检查指定端口的服务是否在运行。
-    :param port: 服务端口
-    :return: True 如果服务在运行，否则 False
-    """
-    for proc in psutil.process_iter(['pid', 'name', 'connections']):
-        try:
-            for conn in proc.connections():
-                if conn.laddr.port == port:
-                    return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            continue
-    return False
-
 def get_final_script(script,log_file):
     run_cmd_contents = f"nohup sh {script} > {log_file} 2>&1 &"
     return run_cmd_contents
 
 @app.route('/restart_services', methods=['POST'])
 @login_required
+@admin_required
 def restart_services():
     """
     重启服务。
@@ -1039,11 +1076,6 @@ def check_service_status_api():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-def main2():
-    """命令行入口点"""
-    app.run(host=SERVER_HOST, port=SERVER_PORT)
 
 def main():
     """命令行入口点"""

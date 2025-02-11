@@ -38,6 +38,9 @@ function showSection(sectionId) {
         loadOperationLogs();
     }
     
+    //if (sectionId === 'userManagement') {
+        //loadUsers();
+   // }
     
 }
 
@@ -701,6 +704,7 @@ async function loadLogContent() {
         if (result.status === 'success') {
             const logContent = document.getElementById('logContent');
             logContent.innerText = result.content;
+           // document.getElementById('logContent').textContent = logContent;
         } else {
             console.error("Failed to load log content:", result.message);
         }
@@ -1559,3 +1563,264 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+//用户管理
+// 显示用户管理页面
+
+
+// 获取用户列表并渲染表格
+// 加载用户数据
+// static/js/scripts.js
+
+// 全局变量
+let userData = [];
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserData();
+    setupEventListeners();
+});
+
+// 加载用户数据
+async function loadUserData() {
+    showLoader();
+    try {
+        const response = await fetch('/users', { method: 'GET' });
+        if (!response.ok) throw new Error('加载用户数据失败');
+        userData = await response.json();
+        renderUserTable(userData);
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        hideLoader();
+    }
+}
+
+// 渲染用户表格
+function renderUserTable(users) {
+    const content = document.getElementById('userManagementContent');
+    // console.log(users)
+    const tableHTML = `
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户名</th>
+                    <th>角色</th>
+                    <th>注册时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${users.map(user => `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.role}</td>
+                        <td>${formatDate(user.created_at)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    content.innerHTML = tableHTML;
+}
+
+// 编辑用户
+async function editUser(userId) {
+    try {
+        const response = await fetch(`/users/${userId}`, { method: 'GET' });
+        if (!response.ok) throw new Error('获取用户信息失败');
+        const user = await response.json();
+        openUserForm(user);
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+// 删除用户
+async function deleteUser22(userId) {
+    if (!confirm('确定要删除该用户吗？')) return;
+    try {
+        const response = await fetch(`/users/delete/${userId}`, { method: 'POST' });
+        if (!response.ok) throw new Error('删除用户失败');
+        loadUserData(); // 重新加载数据
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+let userIdToDelete = null; // 存储待删除的用户ID
+
+async function deleteUser(userId) {
+    userIdToDelete = userId;
+
+    // 显示确认弹窗
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    deleteModal.show();
+
+    // 监听确认删除按钮点击事件
+    document.getElementById('confirmDeleteButton').onclick = async () => {
+        try {
+            const response = await fetch(`/users/delete/${userIdToDelete}`, { method: 'POST' });
+            if (!response.ok) throw new Error('删除用户失败');
+
+            // 显示成功信息
+            showToast('success', '用户删除成功！');
+
+            loadUserData(); // 重新加载数据
+            deleteModal.hide(); // 关闭弹窗
+        } catch (error) {
+            // 显示错误信息
+            showToast('error', error.message || '请求失败，请稍后重试');
+        }
+    };
+}
+
+
+// 打开用户表单（新增或编辑）
+function openUserForm(user) {
+    if (user) {
+        document.getElementById('userId').value = user.id;
+        document.getElementById('username').value = user.username;
+        document.getElementById('role').value = user.role;
+        document.getElementById('password').value = '';
+    } else {
+        document.getElementById('userId').value = '';
+        document.getElementById('username').value = '';
+        document.getElementById('role').value = 'viewer';
+        document.getElementById('password').value = '';
+    }
+    new bootstrap.Modal(document.getElementById('userFormModal')).show();
+}
+
+// 处理表单提交
+// 处理表单提交
+let isSubmitting = false;  // 提交状态锁
+
+async function handleUserSubmit22(event) {
+    event.preventDefault();
+    if (isSubmitting) return;  // 如果正在提交，直接返回
+    isSubmitting = true;       // 锁定
+    const formData = {
+        id: document.getElementById('userId').value || null, // 允许 ID 为空
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value
+    };
+
+    try {
+        const response = await fetch('/users/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, // 确保是 application/json
+            body: JSON.stringify(formData)
+        });
+
+        // 检查响应状态
+        if (!response.ok) {
+            // 解析错误信息
+            const errorData = await response.json();
+            throw new Error(errorData.message || '保存用户失败');
+        }
+
+        // 保存成功
+        loadUserData(); // 重新加载数据
+        document.getElementById('userForm').reset(); // 重置表单
+        const modal = bootstrap.Modal.getInstance(document.getElementById('userFormModal'));
+        if (modal) {
+            modal.hide();
+        }
+    } catch (error) {
+        // 显示错误信息
+        showError(error.message || '请求失败，请稍后重试');
+    }finally {
+        isSubmitting = false;  // 无论成功与否，解除锁定
+    }
+}
+
+async function handleUserSubmit(event) {
+    event.preventDefault();
+    if (isSubmitting) return;  // 如果正在提交，直接返回
+    isSubmitting = true;       // 锁定
+
+    const formData = {
+        id: document.getElementById('userId').value || null,
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value
+    };
+
+    try {
+        const response = await fetch('/users/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || '保存用户失败');
+        }
+
+        // 显示成功信息
+        showToast('success', formData.id ? '用户更新成功！' : '用户新增成功！');
+
+        loadUserData(); // 重新加载数据
+        document.getElementById('userForm').reset(); // 重置表单
+        const modal = bootstrap.Modal.getInstance(document.getElementById('userFormModal'));
+        if (modal) {
+            modal.hide();
+        }
+    } catch (error) {
+        // 显示错误信息
+        showToast('error', error.message || '请求失败，请稍后重试');
+    } finally {
+        isSubmitting = false;  // 无论成功与否，解除锁定
+    }
+}
+
+
+
+// 设置事件监听器
+function setupEventListeners() {
+    document.getElementById('userForm').addEventListener('submit', handleUserSubmit);
+}
+
+// 显示加载状态
+function showLoader() {
+    document.getElementById('userManagementLoader').style.display = 'block';
+}
+
+// 隐藏加载状态
+function hideLoader() {
+    document.getElementById('userManagementLoader').style.display = 'none';
+}
+
+// 显示错误信息
+function showError(message) {
+    const errorDiv = document.getElementById('userManagementError');
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('d-none');
+}
+
+// 隐藏错误信息
+function hideError() {
+    document.getElementById('userManagementError').classList.add('d-none');
+}
+
+
+// 格式化日期时间
+function formatDate(dateString) {
+    if (!dateString) return '未知时间';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
