@@ -5,6 +5,7 @@ import zipfile
 import requests
 from ..utils.file_utils import zip_directory
 from ..config import SERVER_URL
+import argparse
 
 
 def deploy_code(local_path, env):
