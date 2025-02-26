@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="OptiFlux",
+    name="optiflux",
     version="0.1.0",
     author="leepand",
     author_email="your.email@example.com",

@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Dict, Type, Any, List, Optional
-from .model import BaseModel
+from .model import Model
 from .cache import ModelCache
 from optiflux.utils.config_loader import load_config
 
@@ -20,7 +20,7 @@ class ModelLibrary:
 
     def __init__(
         self,
-        models: Dict[str, Type[BaseModel]],
+        models: Dict[str, Type[Model]],
         config_path: Optional[str] = None,
         cache_dir: str = "optiflux_cache",
         **cache_kwargs,
@@ -34,7 +34,7 @@ class ModelLibrary:
         # 加载配置并填充默认值
         self.config = self._load_config_with_defaults(config_path)
         self.cache = ModelCache(cache_dir, **cache_kwargs)
-        self._model_instances: Dict[str, BaseModel] = {}
+        self._model_instances: Dict[str, Model] = {}
         self._initialize_models()
         logger.info("ModelLibrary initialized successfully.")
 
@@ -107,26 +107,6 @@ class ModelLibrary:
 
         logger.info("All models loaded.")
 
-    def _initialize_models3(self):
-        """初始化模型实例（自动合并默认配置）"""
-        logger.info(f"Loading {len(self.models)} models...")
-        for model_name, model_cls in self.models.items():
-            logger.info(f"Loading model: {model_name}")
-            config = self.config.get(model_name, {})
-            instance = model_cls(config)
-            instance.load()
-            self._model_instances[model_name] = instance
-            logger.info(f"Model {model_name} loaded successfully.")
-        logger.info("All models loaded.")
-
-    def _initialize_models2(self):
-        """初始化所有注册的模型实例（带依赖解析）"""
-        # 依赖解析逻辑（示例简化）
-        initialized = set()
-        for model_name in self.models:
-            if model_name not in initialized:
-                self._load_model(model_name, initialized)
-
     def _load_model(self, model_name: str, initialized: set):
         """递归加载模型及其依赖"""
         model_cls = self.models[model_name]
@@ -151,7 +131,7 @@ class ModelLibrary:
         self._model_instances[model_name] = instance
         initialized.add(model_name)
 
-    def get_model(self, name: str) -> BaseModel:
+    def get_model(self, name: str) -> Model:
         """获取已加载的模型实例"""
         if name not in self._model_instances:
             logger.error(f"Model {name} not found in library")
@@ -161,70 +141,71 @@ class ModelLibrary:
     def predict(
         self,
         model_name: str,
-        input_data: Any,
+        *args,  # Use *args for dynamic input
         cache_key: Optional[str] = None,
-        use_cache: bool = False,  # 添加此参数
+        use_cache: bool = False,
         **kwargs,
     ) -> Any:
-        """执行预测（带缓存支持）"""
+        """Execute prediction with dynamic input handling."""
         if use_cache:
             cached_result = self.cache.get(cache_key)
             if cached_result is not None:
                 return cached_result
 
-        # 执行预测
+        # Get the model instance
         model = self.get_model(model_name)
-        result = model.predict(input_data, **kwargs)
+
+        # Pass the first argument as input_data
+        result = model._predict(*args, **kwargs)
 
         if use_cache and cache_key:
             self.cache.set(cache_key, result)
 
         return result
 
-    # 在 ModelLibrary 类中新增方法
     def predict_batch(
         self,
         model_name: str,
-        inputs: List[Any],
+        *args,  # Use *args for dynamic input
         cache_keys: Optional[List[str]] = None,
         use_cache: bool = True,
         **kwargs,
     ) -> List[Any]:
-        """批量预测（带缓存支持）"""
+        """Execute batch prediction with dynamic input handling."""
         model = self.get_model(model_name)
 
-        # 生成默认缓存键
+        # Generate default cache keys
         if cache_keys is None and use_cache:
-            cache_keys = [f"{model_name}_{hash(str(item))}" for item in inputs]
+            cache_keys = [f"{model_name}_{hash(str(item))}" for item in args[0]]
 
         results = []
 
-        # 先尝试获取缓存
+        # Try to fetch cached results
         cached_results = []
         if use_cache and cache_keys:
             cached_results = [self.cache.get(key) for key in cache_keys]
         else:
-            cached_results = [None] * len(inputs)
+            cached_results = [None] * len(args[0])
 
-        # 筛选需要预测的索引
+        # Identify indices that need prediction
         need_predict_indices = [
             i for i, val in enumerate(cached_results) if val is None
         ]
-        need_predict_items = [inputs[i] for i in need_predict_indices]
+        need_predict_items = [args[0][i] for i in need_predict_indices]
 
         if need_predict_items:
-            # 执行批量预测
-            new_results = model.predict_batch(need_predict_items, **kwargs)
+            # Execute batch prediction
+            new_results = model._predict_batch(need_predict_items, **kwargs)
 
-            # 存储新结果到缓存
+            # Store new results in cache
             if use_cache and cache_keys:
-                with self.cache.transact():  # 使用事务保证原子性
+                with self.cache.transact():
                     for idx, result in zip(need_predict_indices, new_results):
                         self.cache.set(cache_keys[idx], result)
 
-            # 合并结果
+            # Merge results
             result_ptr = 0
-            for i in range(len(inputs)):
+            for i in range(len(args[0])):
                 if cached_results[i] is not None:
                     results.append(cached_results[i])
                 else:

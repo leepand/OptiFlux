@@ -39,10 +39,14 @@ def generate_default_config(env, model_name, model_version):
     :param model_version: 模型版本
     :return: 默认配置
     """
+    model_path = os.path.join(ENV_DIRS.get(env), model_name)
+    model_db_dir = os.path.join(model_path, "0.0/dbs")
+    os.makedirs(model_db_dir, exist_ok=True)
     default_config = {
         "recomserver": [{"port": 8001, "workers": 2}],
         "rewardserver": [{"port": 8002, "workers": 2}],
         "current_version": model_version,
+        "model_path": model_path,
     }
     return default_config
 

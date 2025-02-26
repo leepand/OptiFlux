@@ -44,10 +44,11 @@ GUNICORN_LOGLEVEL=info
 
 IGNORE_PATTERNS = [
     ".ipynb_checkpoints",  # 忽略 Jupyter Notebook 的检查点目录
-    ".optiflux/index",     # 忽略索引文件
+    ".optiflux/index",  # 忽略索引文件
     ".optiflux",
-    "servers.yaml"
+    "servers.yaml",
 ]
+
 
 class OptifluxClient:
     def __init__(self, repo_path, server_name=None):
@@ -89,7 +90,7 @@ class OptifluxClient:
             response = self.session.post(
                 url,
                 data={"username": username, "password": password},
-                headers={"Accept": "application/json"}  # 指定需要 JSON 响应
+                headers={"Accept": "application/json"},  # 指定需要 JSON 响应
             )
             print(f"Response status code: {response.status_code}")
             print(f"Response content: {response.text}")
@@ -109,7 +110,6 @@ class OptifluxClient:
                 self.user_id = None
         except requests.exceptions.RequestException as e:
             print(f"Request failed: {e}")
-
 
     def login2(self, username, password, server_name):
         """登录指定服务器并保存会话信息"""
@@ -373,12 +373,13 @@ class OptifluxClient:
         else:
             print("Failed to create commit")
 
-    def should_ignore(self,file_path):
-            """检查文件路径是否匹配忽略规则"""
-            for pattern in IGNORE_PATTERNS:
-                if pattern in file_path:
-                    return True
-            return False
+    def should_ignore(self, file_path):
+        """检查文件路径是否匹配忽略规则"""
+        for pattern in IGNORE_PATTERNS:
+            if pattern in file_path:
+                return True
+        return False
+
     def push(self, remote, model_name, model_version):
         """打包文件并推送到服务端"""
         index = self.read_index()
@@ -394,7 +395,7 @@ class OptifluxClient:
                 if self.should_ignore(file_path):
                     print(f"Ignored {file_path}")
                     continue
-                if file_path in ["operations","commit_data"]:  # 跳过操作信息
+                if file_path in ["operations", "commit_data"]:  # 跳过操作信息
                     continue
                 zipf.write(file_path, os.path.relpath(file_path, self.repo_path))
                 print(f"Added to ZIP: {file_path}")
@@ -414,7 +415,7 @@ class OptifluxClient:
                 "model_name": model_name,
                 "model_version": model_version,
                 "remote": remote,
-                "operations": json.dumps({"operations":operations}),
+                "operations": json.dumps({"operations": operations}),
             },
         )
         print(f"Server response: {response.status_code}, {response.text}")
@@ -529,12 +530,12 @@ def create_project(args):
         src_dir / "decision_module.py": "# 决策模块\n",
         src_dir / "strategy_module.py": "# 策略模块\n",
         src_dir
-        / "model.py": f"""from optiflux.core import BaseModel
+        / "model.py": f"""from optiflux import Model
 import logging
 
 logger = logging.getLogger("optiflux.{model_name}")
 
-class {model_name.title()}Model(BaseModel):
+class {model_name.title()}Model(Model):
     DEFAULT_CONFIG = {{
         "model_path": "models/{model_name}_v1.pt",
         "threshold": 0.5
@@ -544,32 +545,33 @@ class {model_name.title()}Model(BaseModel):
         logger.info("Loading {model_name} model...")
         # 加载模型逻辑
 
-    def predict(self, input_data):
+    def _predict(self, input_data):
         logger.debug("Predicting with {model_name} model...")
         # 预测逻辑
 """,
         src_dir
-        / "recomserver.py": f"""from optiflux import BaseModel, ModelLibrary, make
-from optiflux.utils.logx import log_recom_error, log_recom_debug
+        / "recomserver.py": f"""from optiflux import Model, make
+from optiflux.utils.logx import LoggerManager
 from optiflux import make
+from optiflux.api import create_optiflux_app
 
 import traceback
 import numpy as np
 import os
 import json
 
-from utils import MODEL_ENV, VERSION
+from .utils import MODEL_ENV, VERSION
 
 
-class RecomServer(BaseModel):
+class RecomServer(Model):
     def _load(self):
         self.model_name = f"{model_name}"
   
-        self.model_db = make(
-            f"cache/{{self.model_name}}-v{{VERSION}}",
-            db_name="{model_name}.db",
-            env=MODEL_ENV,
+        self.model_db = make(env=MODEL_ENV,
+            model_name=self.model_name,
+            db_name="personalized_unispinux_strategy2.db"
         )
+        self.logger=LoggerManager()
 
     def _predict(self, items):
         uid = items.get("uid")
@@ -584,32 +586,15 @@ class RecomServer(BaseModel):
                 f"{{self.model_name}}:{{request_id}}-error",
                 str(traceback.format_exc()),
             ]
-            log_recom_error([error_content])
+            self.logger.log_error("recom",[error_content])
             return items
 
 # 初始化模型库
-library = ModelLibrary(
-    models={{"recomserver": RecomServer}},
-    #config_path="config.yml",
-        #cache_dir=".prod_cache",
-    size_limit=5*1024**3  # 5GB 缓存
-)
-
-# 创建 API 应用
-api_config={{
-        "title": "Production Recomserver API",
-        "api_prefix": "",
-        "enable_docs": True
-    }}
-api_service = create_optiflux_app(
-    library,
-    **api_config
-)
-app = api_service.app  # ✅ 关键：导出 FastAPI 实例
+app = create_optiflux_app(model={{"recomserver": RecomServer}}) # ✅ 关键：导出 FastAPI 实例
 """,
         src_dir
-        / "rewardserver.py": f"""from optiflux import BaseModel, ModelLibrary, make
-from optiflux.utils.logx import log_reward_error, log_reward_debug
+        / "rewardserver.py": f"""from optiflux import Model, make
+from optiflux.utils.logx import LoggerManager
 from optiflux.api import create_optiflux_app
 
 
@@ -618,10 +603,10 @@ import numpy as np
 import os
 import json
 
-from utils import MODEL_ENV, VERSION
+from .utils import MODEL_ENV, VERSION
 
 
-class RewardServer(BaseModel):
+class RewardServer(Model):
     def _load(self):
         self.model_name = f"{model_name}"
   
@@ -630,6 +615,7 @@ class RewardServer(BaseModel):
             db_name="{model_name}.db",
             env=MODEL_ENV,
         )
+        self.logger=LoggerManager()
 
     def _predict(self, items):
         uid = items.get("uid")
@@ -644,30 +630,13 @@ class RewardServer(BaseModel):
                 f"{{self.model_name}}:{{request_id}}-error",
                 str(traceback.format_exc()),
             ]
-            log_reward_error([error_content])
+            self.logger.log_error("reward",[error_content])
             return items
 
 # 初始化模型库
-library = ModelLibrary(
-    models={{"rewardserver": RewardServer}},
-    #config_path="config.yml",
-    #cache_dir=".prod_cache",
-    size_limit=5*1024**3  # 5GB 缓存
-)
-
-# 创建 API 应用
-api_config={{
-        "title": "Production Rewardserver API",
-        "api_prefix": "",
-        "enable_docs": True
-    }}
-api_service = create_optiflux_app(
-    library,
-    **api_config
-)
-app = api_service.app  # ✅ 关键：导出 FastAPI 实例
+app = create_optiflux_app(model={{"rewardserver": RewardServer}}) # ✅ 关键：导出 FastAPI 实例
 """,
-        utils_dir / "__init__.py": "# 工具模块\n",
+        utils_dir / "__init__.py": "# 工具模块\n MODEL_ENV, VERSION='dev','0.0'\n",
         utils_dir
         / "config_loader.py": """import yaml
 from pathlib import Path
@@ -793,7 +762,7 @@ def main():
 
     # Push command
     push_parser = subparsers.add_parser("push", help="Push changes to remote")
-    push_parser.add_argument("remote", help="Remote name")
+    push_parser.add_argument("remote", help="Remote Environment name")
     push_parser.add_argument("model_name", help="Model name")
     push_parser.add_argument("model_version", help="Model version")
     push_parser.add_argument("--server", help="Server name to use")
@@ -805,7 +774,7 @@ def main():
 
     # Pull command
     pull_parser = subparsers.add_parser("pull", help="Pull changes from remote")
-    pull_parser.add_argument("remote", help="Remote name")
+    pull_parser.add_argument("remote", help="Remote Environment name")
     pull_parser.add_argument("model_name", help="Model name")
     pull_parser.add_argument("model_version", help="Model version")
     pull_parser.add_argument("--server", help="Server name to use")
@@ -822,7 +791,7 @@ def main():
     login_parser.add_argument("--server", help="Server name to use")
     login_parser.set_defaults(
         func=lambda args: OptifluxClient(os.getcwd(), args.server).login(
-            args.username, args.password,args.server
+            args.username, args.password, args.server
         )
     )
 

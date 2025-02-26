@@ -1,111 +1,139 @@
-from fastapi import FastAPI, HTTPException, Request, status
-from pydantic import BaseModel
+import fastapi
 from typing import Any, Dict, List, Optional
 import uvicorn
 import logging
 from optiflux.core.library import ModelLibrary
+from ..core.model import Model
 
 # 配置日志
 logger = logging.getLogger("optiflux.APIService")
 
 
-class APIService:
+class ModelkitAPIRouter(fastapi.APIRouter):
     def __init__(
         self,
-        library: ModelLibrary,
-        title: str = "Optiflux API",
-        version: str = "1.0",
-        api_prefix: str = "/api/v1",
-        enable_docs: bool = True,
-    ):
-        logger.info("Initializing APIService...")
-        self.app = FastAPI(
-            title=title, version=version, docs_url="/docs" if enable_docs else None
+        # ModelLibrary arguments
+        model: Dict,
+        **kwargs,
+    ) -> None:
+        # add custom startup/shutdown events
+        super().__init__(**kwargs)
+
+        self.lib = ModelLibrary(models=model, size_limit=5 * 1024**3)  # 5GB 缓存)
+
+
+class ModelkitAutoAPIRouter(ModelkitAPIRouter):
+    def __init__(
+        self,
+        # ModelLibrary arguments
+        model: Dict,
+        # paths overrides change the configuration key into a path
+        route_paths: Optional[Dict[str, str]] = None,
+        api_prefix: str = "",
+        # APIRouter arguments
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            model=model,
+            **kwargs,
         )
-        self.library = library
-        self.api_prefix = api_prefix
-        self._register_routes()
-        logger.info("APIService initialized successfully.")
 
-    def _register_routes(self):
-        # 定义请求体模型
-        class PredictRequest(BaseModel):
-            data: Any
-            cache_key: Optional[str] = None
-            use_cache: Optional[bool] = True  # 添加可选参数
+        route_paths = route_paths or {}
+        model_name = list(model.keys())[0]
+        path = route_paths.get(model_name, f"{api_prefix}/predict/" + model_name)
+        batch_path = route_paths.get(
+            model_name, f"{api_prefix}/predict/batch/" + model_name
+        )
 
-        # 修改预测端点
-        @self.app.post(f"{self.api_prefix}/predict/{{model_name}}")
-        async def predict_endpoint(
-            model_name: str, request: PredictRequest  # 使用新的请求模型
-        ) -> Dict[str, Any]:
-            try:
-                result = self.library.predict(
-                    model_name=model_name,
-                    input_data=request.data,
-                    cache_key=request.cache_key,
-                    use_cache=request.use_cache,  # 正确传递参数
-                )
-                return result
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
+        summary = ""
+        description = ""
+        m = model.get(model_name)
+        if m.__doc__:
+            doclines = m.__doc__.strip().split("\n")
+            summary = doclines[0]
+            if len(doclines) > 1:
+                description = "".join(doclines[1:])
 
-        # 在 APIService 类中新增批量预测端点
-        @self.app.get("/health")
-        def health_check():
-            return {"status": "healthy"}
+        logger.info(f"Adding model: {model_name}")
+        # item_type = m._item_type or Any
 
-        # 添加批量请求模型
-        class BatchPredictRequest(BaseModel):
-            items: List[Any]
-            cache_keys: Optional[List[str]] = None
-            use_cache: Optional[bool] = True
+        self.add_api_route(
+            path,
+            self._make_model_endpoint_fn(m, model_name),
+            methods=["POST"],
+            description=description,
+            summary=summary,
+            tags=[str(type(m).__module__)],
+        )
+        self.add_api_route(
+            batch_path,
+            self._make_batch_model_endpoint_fn(m, model_name),
+            methods=["POST"],
+            description=description,
+            summary=summary,
+            tags=[str(type(m).__module__)],
+        )
+        logger.info(f"Added model to service: {model_name}, path: {path}")
 
-        # 添加批量预测端点
-        @self.app.post(f"{self.api_prefix}/batch_predict/{{model_name}}")
-        async def batch_predict(
-            model_name: str, request: BatchPredictRequest
-        ) -> Dict[str, Any]:
-            try:
-                results = self.library.predict_batch(
-                    model_name=model_name,
-                    inputs=request.items,
-                    cache_keys=request.cache_keys,
-                    use_cache=request.use_cache,
-                )
-                return results
-            except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=f"Batch prediction failed: {str(e)}"
-                )
+    def _make_model_endpoint_fn(self, model, model_name):
+        if isinstance(model, Model):
 
-        for model_name in self.library.models:
-            self._add_model_endpoint(model_name)
+            async def _aendpoint(
+                item=fastapi.Body(...),
+                model=fastapi.Depends(lambda: self.lib.get_model(model_name)),
+            ):
+                return await model._predict(item)
 
-    def _add_model_endpoint(self, model_name: str):
-        class RequestBody(BaseModel):
-            data: Any
-            cache_key: Optional[str] = None
+            return _aendpoint
 
-        @self.app.post(f"{self.api_prefix}/predict/{model_name}")
-        async def predict(
-            request: RequestBody, use_cache: bool = True
-        ) -> Dict[str, Any]:
-            try:
-                result = self.library.predict(
-                    model_name=model_name,
-                    input_data=request.data,
-                    cache_key=request.cache_key,
-                    use_cache=use_cache,
-                )
-                return {"result": result, "cached": False}
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
+        def _endpoint(
+            item=fastapi.Body(...),
+            model=fastapi.Depends(lambda: self.lib.get_model(model_name)),
+        ):
+            return model._predict(item)
 
-    def run(self, host: str = "0.0.0.0", port: int = 8000, **kwargs):
-        logger.info(f"Starting API server on {host}:{port}")
-        uvicorn.run(self.app, host=host, port=port, **kwargs)
+        return _endpoint
+
+    def _make_batch_model_endpoint_fn(self, model, model_name):
+        if isinstance(model, Model):
+
+            async def _aendpoint(
+                item: List = fastapi.Body(...),
+                model=fastapi.Depends(lambda: self.lib.get_model(model_name)),
+            ):
+                return await model._predict_batch(item)
+
+            return _aendpoint
+
+        def _endpoint(
+            item: List = fastapi.Body(...),
+            model=fastapi.Depends(lambda: self.lib.get_model(model_name)),
+        ):
+            return model._predict_batch(item)
+
+        return _endpoint
 
 
-def create_optiflux_app(library: ModelLibrary, **config) -> APIService:
-    return APIService(library=library, **config)
+def create_optiflux_app(model: Dict, **config):
+    title = config.get("title")
+    if title is None:
+        title = "Optiflux API"
+    version = "1.0"
+    enable_docs = True
+    app = fastapi.FastAPI(
+        title=title, version=version, docs_url="/docs" if enable_docs else None
+    )
+    router = ModelkitAutoAPIRouter(model=model, **config)
+    app.include_router(router)
+    return app
+
+
+def serve(model, host: str = "0.0.0.0", port: int = 8000, **config):
+    """
+    Run a library as a service.
+
+    Run an HTTP server with specified models using FastAPI
+    """
+    app = create_optiflux_app(model=model, **config)
+    logger.info(f"Starting API server on {host}:{port}")
+    uvicorn.run(app, host=host, port=port)

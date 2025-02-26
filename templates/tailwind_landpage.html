@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiFlux - AI 驱动个性化平台</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Custom CSS (if needed) -->
+    <style>
+        /* Custom gradient animation for hero section */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            background-size: 200% 200%;
+            animation: gradientAnimation 10s ease infinite;
+        }
+        /* Hover effect for feature cards */
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50 text-gray-800">
+    <!-- Hero Section -->
+    <section class="hero-section text-white py-20">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-5xl font-bold mb-4">OptiFlux</h1>
+            <p class="text-xl mb-6">一流的 AI 驱动应用个性化平台</p>
+            <p class="text-lg mb-8">通过利用我们 AI 驱动的 MLOps：OptiFlux，为游戏玩家提供个性化优惠套餐/体验策略，满足企业最重要的 LTV 提升需求。</p>
+            <a href="/product" class="inline-block bg-pink-500 text-white px-8 py-3 rounded-full hover:bg-pink-600 transition duration-300">进入产品界面</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature Card 1 -->
+                <div class="feature-card bg-white p-8 border border-gray-200 rounded-lg text-center transition duration-300">
+                    <i class="fas fa-robot text-4xl text-purple-600 mb-4"></i>
+                    <h3 class="text-2xl font-semibold mb-4">AI 驱动</h3>
+                    <p class="text-gray-600">利用先进的 AI/RL 技术，为用户提供精准的个性化推荐。</p>
+                </div>
+                <!-- Feature Card 2 -->
+                <div class="feature-card bg-white p-8 border border-gray-200 rounded-lg text-center transition duration-300">
+                    <i class="fas fa-cogs text-4xl text-purple-600 mb-4"></i>
+                    <h3 class="text-2xl font-semibold mb-4">MLOps 支持</h3>
+                    <p class="text-gray-600">通过 OptiFlux 的 MLOps 能力，实现模型的高效部署与管理。</p>
+                </div>
+                <!-- Feature Card 3 -->
+                <div class="feature-card bg-white p-8 border border-gray-200 rounded-lg text-center transition duration-300">
+                    <i class="fas fa-chart-line text-4xl text-purple-600 mb-4"></i>
+                    <h3 class="text-2xl font-semibold mb-4">提升 LTV</h3>
+                    <p class="text-gray-600">通过个性化体验策略的有效触发，显著提升玩家的终身价值（LTV）。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section class="py-16 bg-gray-100">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold mb-8">客户评价</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Testimonial Card 1 -->
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <i class="fas fa-quote-left text-2xl text-purple-600 mb-4"></i>
+                    <p class="text-gray-600 mb-6">"OptiFlux 帮助我们显著提升了用户留存率和 LTV。"</p>
+                    <div class="flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                            <img src="https://via.placeholder.com/50" alt="Client Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-semibold">某游戏公司 CEO</p>
+                            <p class="text-sm text-gray-500">游戏公司</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Testimonial Card 2 -->
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <i class="fas fa-quote-left text-2xl text-purple-600 mb-4"></i>
+                    <p class="text-gray-600 mb-6">"通过 OptiFlux，我们的个性化推荐系统变得更加智能和高效。"</p>
+                    <div class="flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                            <img src="https://via.placeholder.com/50" alt="Client Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-semibold">某科技公司 CTO</p>
+                            <p class="text-sm text-gray-500">科技公司</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Testimonial Card 3 -->
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <i class="fas fa-quote-left text-2xl text-purple-600 mb-4"></i>
+                    <p class="text-gray-600 mb-6">"OptiFlux 的 AI 驱动平台为我们的业务带来了显著的增长。"</p>
+                    <div class="flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                            <img src="https://via.placeholder.com/50" alt="Client Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-semibold">某初创公司 CEO</p>
+                            <p class="text-sm text-gray-500">初创公司</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300"><i class="fab fa-instagram"></i></a>
+            </div>
+            <p>&copy; 2025 OptiFlux. All rights reserved. | <a href="/privacy-policy" class="text-pink-500 hover:text-pink-600">隐私政策</a></p>
+        </div>
+    </footer>
+</body>
+</html>
