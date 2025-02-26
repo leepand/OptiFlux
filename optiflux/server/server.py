@@ -1404,12 +1404,6 @@ def check_service_status_api():
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
-def main2():
-    """命令行入口点"""
-    app.run(host=SERVER_HOST, port=SERVER_PORT)
-
-
 def main():
     """命令行入口点"""
     parser = argparse.ArgumentParser(description="OptiFlux Server")

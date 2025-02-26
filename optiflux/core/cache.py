@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelCache:
-    def __init__(self, cache_dir: str, size_limit: int = 10**9, **kwargs):
+    def __init__(self, cache_dir: str, size_limit: int = int(100e9), **kwargs):
         """
         初始化缓存实例。
 
