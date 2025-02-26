@@ -289,112 +289,53 @@ function showToast(icon, title, timer = 3000) {
     });
 }
 
-// 滚动锁定管理
-let scrollPosition = 0;
-
-function lockScroll() {
-    scrollPosition = window.pageYOffset;
-    document.documentElement.style.cssText = `
-        position: fixed;
-        top: -${scrollPosition}px;
-        left: 0;
-        width: 100%;
-        overflow: hidden;
-    `;
-}
-
-function unlockScroll() {
-    document.documentElement.style.cssText = '';
-    window.scrollTo(0, scrollPosition);
-}
-
 async function restartServices(env, modelName, modelVersion) {
-    // 锁定页面滚动
-    lockScroll();
-    
-    const restartButton = document.querySelector(`button[onclick="restartServices('${env}', '${modelName}', '${modelVersion}')"]`);
-    
-    // 创建加载层
-    const overlay = document.createElement('div');
-    overlay.className = 'loading-overlay';
-    overlay.innerHTML = `
-        <div class="loading-overlay-inner">
-            <div class="version-card">
-                <div class="version-header">
-                    <i class="bi bi-cloud-check"></i>
-                    <h3>Service Restarting</h3>
-                </div>
-                
-                <div class="version-details">
-                    <div class="version-detail">
-                        <div class="version-label">Environment</div>
-                        <div class="version-value">${env.toUpperCase()}</div>
-                    </div>
-                    <div class="version-detail">
-                        <div class="version-label">Model Name</div>
-                        <div class="version-value" data-tooltip="${modelName}">${modelName}</div>
-                    </div>
-                    <div class="version-detail">
-                        <div class="version-label">Version</div>
-                        <div class="version-value">v${modelVersion}</div>
-                    </div>
-                    <div class="version-detail">
-                        <div class="version-label">Status</div>
-                        <div class="version-value text-warning">Initializing</div>
-                    </div>
-                </div>
-
-                <div class="loading-status">
-                    <i class="bi bi-arrow-repeat spinning-icon"></i>
-                    <span>Processing your request...</span>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-    let result;
+    // 显示加载状态
+    const loading = document.getElementById('loading');
+    loading.style.display = 'block';
 
     try {
-        const statusElement = overlay.querySelector('.version-value.text-warning');
-        statusElement.textContent = 'In Progress';
-
-        // 模拟API调用延迟
+        // 调用后端接口
         const response = await fetch('/restart_services', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                env, 
-                model_name: modelName, 
-                model_version: modelVersion 
-            })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                env: env,
+                model_name: modelName,
+                model_version: modelVersion,
+            }),
         });
 
-        result = await response.json();
-        
-        statusElement.textContent = result.status === 'success' ? 'Completed' : 'Failed';
-        statusElement.className = `version-value ${result.status === 'success' ? 'text-success' : 'text-danger'}`;
+        const result = await response.json();
 
+        if (result.status === 'success') {
+            // 显示成功 Toast
+            showToast('success', 'Services restarted successfully!');
+
+            // 重新加载模型版本数据
+            loadModelVersions(env, modelName);
+            // 刷新服务状态
+            checkServiceStatus(env, modelName, modelVersion);
+        } else {
+            // 显示错误 Toast
+            showToast('error', result.message || 'Failed to restart services.');
+            // 重新加载模型版本数据
+            loadModelVersions(env, modelName);
+            // 刷新服务状态
+            checkServiceStatus(env, modelName, modelVersion);
+        }
     } catch (error) {
-        const statusElement = overlay.querySelector('.version-value.text-warning');
-        statusElement.textContent = 'Network Error';
-        statusElement.className = 'version-value text-danger';
-        console.error('Restart failed:', error);
-        result = { status: 'error' };
+        // 显示错误 Toast
+        showToast('error', 'An error occurred. Please try again later.');
+        // 重新加载模型版本数据
+            loadModelVersions(env, modelName);
+            // 刷新服务状态
+            checkServiceStatus(env, modelName, modelVersion);
     } finally {
-        const delay = result?.status === 'success' ? 1500 : 3000;
-        setTimeout(() => {
-            overlay.style.animation = 'fadeOut 0.3s ease forwards';
-            setTimeout(() => {
-                overlay.remove();
-                unlockScroll();
-                
-                if (result?.status === 'success') {
-                    loadModelVersions(env, modelName);
-                    checkServiceStatus(env, modelName, modelVersion);
-                }
-            }, 300);
-        }, delay);
+        // 隐藏加载状态
+        loading.style.display = 'none';
     }
 }
 
