@@ -1680,6 +1680,7 @@ window.showDocumentation = async function() {
             overlay.remove();
             document.body.style.paddingRight = '';
             document.body.classList.remove('modal-open');
+            document.documentElement.style.overflow = '';
         }, 300);
     };
 
