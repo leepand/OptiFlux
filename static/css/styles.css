@@ -761,3 +761,14 @@ body {
     width: 100%;
     overflow: hidden;
 }
+/* 添加悬停效果-模型列表添加按钮 */
+#addModelLink:hover {
+    color: #2563eb !important; /* 更深的蓝色 */
+    text-decoration: underline !important;
+}
+
+/* 键盘导航样式 */
+#addModelLink:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}

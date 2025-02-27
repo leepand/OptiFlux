@@ -660,7 +660,17 @@ function loadModelNames(env, page = 1) {
                 if (result.model_names.length < 1) {
                     modelNamesList.innerHTML = `
                         <div class="text-center py-5">
-                            <div class="text-muted mb-3">暂无模型，请添加</div>
+                            <div class="text-muted mb-3">
+                                暂无模型，请
+                                <a href="javascript:void(0)" 
+                                   class="text-primary text-decoration-underline cursor-pointer"
+                                   onclick="showDocumentation()"
+                                   id="addModelLink"
+                                   role="button"
+                                   tabindex="0">
+                                    添加
+                                </a>
+                            </div>
                         </div>
                     `;
                     return;
