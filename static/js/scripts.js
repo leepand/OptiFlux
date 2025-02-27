@@ -49,83 +49,6 @@ showSection('deploy');
 let currentPage = 1; // 当前页码
 const perPage = 10; // 每页显示的条目数
 
-// 加载某个环境下的 model_name 列表
-function loadModelNames(env, page = 1) {
-    const modelNamesList = document.getElementById('modelNamesList');
-    modelNamesList.innerHTML = '<div class="text-center"><i class="bi bi-arrow-repeat spinner"></i> Loading model names...</div>';
-
-    fetch(`/model_names?env=${env}&page=${page}&per_page=${perPage}`)
-        .then(response => response.json())
-        .then(result => {
-            if (result.status === 'success') {
-                let modelNamesHTML = '';
-                result.model_names.forEach(model => {
-                    modelNamesHTML += `
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">${model.model_name}</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p class="card-text">
-                                            <strong>Version Count:</strong> ${model.version_count}
-                                        </p>
-                                        <p class="card-text">
-                                            <strong>Max Version:</strong> ${model.max_version}
-                                        </p>
-                                        <p class="card-text">
-                                            <strong>Total Size:</strong> ${(model.total_size / 1024 / 1024).toFixed(2)} MB
-                                        </p>
-                                        <p class="card-text">
-                                            <strong>Latest Timestamp:</strong> ${model.latest_timestamp}
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p class="card-text">
-                                            <strong>Serving Version:</strong> ${model.serving_version || 'None'}
-                                        </p>
-                                        ${model.serving_version ? `
-                                            <p class="card-text">
-                                                <strong>Recomserver Ports:</strong>
-                                                ${model.recomserver.map(recom => `
-                                                    <span class="badge ${recom.status === 'Running' ? 'bg-success' : 'bg-danger'} me-1">
-                                                        ${recom.port} (${recom.status === 'Running' ? 'Running' : 'Error'})
-                                                    </span>
-                                                `).join('')}
-                                            </p>
-                                            <p class="card-text">
-                                                <strong>Rewardserver Ports:</strong>
-                                                ${model.rewardserver.map(reward => `
-                                                    <span class="badge ${reward.status === 'Running' ? 'bg-success' : 'bg-danger'} me-1">
-                                                        ${reward.port} (${reward.status === 'Running' ? 'Running' : 'Error'})
-                                                    </span>
-                                                `).join('')}
-                                            </p>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-end gap-2 mt-3">
-                                    <button class="btn btn-sm btn-primary" onclick="loadModelVersions('${env}', '${model.model_name}')">
-                                        <i class="bi bi-eye me-1"></i>View Versions
-                                    </button>
-                                    <button class="btn btn-sm btn-info" onclick="showConfigManagement('${env}', '${model.model_name}')">
-                                        <i class="bi bi-gear me-1"></i>Manage Config
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                modelNamesList.innerHTML = modelNamesHTML;
-            } else {
-                modelNamesList.innerHTML = '<div class="text-danger">Failed to load model names. Please try again later.</div>';
-            }
-        })
-        .catch(error => {
-            console.error("Error loading model names:", error);
-            modelNamesList.innerHTML = '<div class="text-danger">An error occurred. Please try again later.</div>';
-        });
-}
-
 /**
  * 显示右上角 Toast 通知
  * @param {string} icon - 图标类型（success, error, warning, info, question）
@@ -718,6 +641,16 @@ function loadModelNames(env, page = 1) {
         .then(response => response.json())
         .then(result => {
             if (result.status === 'success') {
+                if (result.model_names.length < 1) {
+                    modelNamesList.innerHTML = `
+                        <div class="text-center py-5">
+                            <div class="text-muted mb-3">暂无模型，请添加</div>
+                        </div>
+                    `;
+                    return;
+                }
+                //console.log(result.model_names,"result.model_names",result.model_names.length)
+                
                 let modelNamesHTML = '';
                 result.model_names.forEach(model => {
                     modelNamesHTML += `
