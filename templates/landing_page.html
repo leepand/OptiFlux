@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiFlux - AI 驱动个性化决策平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .gradient-text {
+            background: linear-gradient(45deg, #3B82F6, #8B5CF6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold gradient-text">OptiFlux</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-600 hover:text-indigo-600 transition">功能特性</a>
+                    <a href="#clients" class="text-gray-600 hover:text-indigo-600 transition">客户案例</a>
+                    <a href="#contact" class="text-gray-600 hover:text-indigo-600 transition">联系我们</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 bg-gradient-to-b from-gray-900 to-blue-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                    下一代 AI 驱动
+                    <span class="gradient-text">个性化决策平台</span>
+                </h1>
+                <p class="text-xl text-gray-200 mb-12 max-w-3xl mx-auto leading-relaxed">
+                    通过深度强化学习与自动化 MLOps，为企业提供实时动态的个性化策略，最大化用户生命周期价值
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <a href="/product" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-lg font-medium transition transform hover:-translate-y-1">
+                        预约演示
+                    </a>
+                    <a href="#docs" class="border border-gray-300 hover:border-indigo-500 text-gray-300 hover:text-indigo-500 px-8 py-4 rounded-lg font-medium transition">
+                        技术文档
+                    </a>
+                </div>
+                <div class="mt-20 floating">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1995/1995485.png" class="h-48 mx-auto" alt="AI Platform">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">核心竞争优势</h2>
+                <p class="text-gray-500 max-w-2xl mx-auto">结合前沿AI技术与企业级工程实践，打造智能决策中枢</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-12">
+                <div class="p-8 bg-gradient-to-b from-white to-blue-50 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-brain text-3xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">深度强化学习引擎</h3>
+                    <p class="text-gray-500 leading-relaxed">
+                        基于深度Q网络(DQN)和策略梯度算法，实现实时动态策略优化，支持多目标联合优化
+                    </p>
+                </div>
+                <div class="p-8 bg-gradient-to-b from-white to-blue-50 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-infinity text-3xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">全流程 MLOps</h3>
+                    <p class="text-gray-500 leading-relaxed">
+                        从特征工程到模型部署的全生命周期管理，支持AB测试、模型监控和自动回滚
+                    </p>
+                </div>
+                <!-- 在 Features Section 部分替换以下代码 -->
+                <div class="p-8 bg-gradient-to-b from-white to-blue-50 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-bolt text-3xl text-blue-600"></i> <!-- 改为闪电图标 -->
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">实时决策系统</h3>
+                    <p class="text-gray-500 leading-relaxed">
+                        毫秒级响应延迟，支持千万级QPS，内置动态特征编码和分布式推理引擎
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Client Showcase -->
+    <section id="clients" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">行业成功案例</h2>
+                <p class="text-gray-500 max-w-2xl mx-auto">助力各行业头部企业实现智能决策转型</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-gamepad text-xl text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">游戏行业</h3>
+                    </div>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        某头部SLG游戏通过动态定价策略，实现30%的ARPU提升和25%的留存率增长
+                    </p>
+                    <div class="flex items-center">
+                        <img src="https://cdn-icons-png.flaticon.com/512/114/114717.png" class="w-10 h-10 rounded-full mr-3" alt="Client">
+                        <div>
+                            <p class="font-medium">张某某</p>
+                            <p class="text-sm text-gray-400">某游戏公司CTO</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 更多案例 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-indigo-600 to-blue-600">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-6">立即开启智能决策之旅</h2>
+            <p class="text-gray-200 mb-8 max-w-xl mx-auto leading-relaxed">
+                我们的解决方案专家将在24小时内与您联系，提供定制化方案演示
+            </p>
+            <form class="flex flex-col sm:flex-row gap-4 justify-center">
+                <input type="email" placeholder="请输入企业邮箱" class="px-6 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white">
+                <button type="submit" class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition">
+                    申请演示
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-white font-medium mb-4">OptiFlux</h3>
+                    <p class="text-sm leading-relaxed">致力于通过人工智能技术推动企业决策智能化转型</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-medium mb-4">产品</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">功能特性</a></li>
+                        <li><a href="#" class="hover:text-white transition">定价方案</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-medium mb-4">资源</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">文档中心</a></li>
+                        <li><a href="#" class="hover:text-white transition">行业白皮书</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-medium mb-4">联系</h4>
+                    <p class="text-sm">contact@optiflux.ai</p>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="hover:text-white transition"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="hover:text-white transition"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-sm">
+                <p>© 2024 OptiFlux. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

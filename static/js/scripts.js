@@ -334,11 +334,15 @@ async function loadLogFiles() {
 
         const result = await response.json();
         if (result.status === 'success') {
+            // 先添加临时加载效果
+            //container.style.opacity = '0.5';
             container.innerHTML = renderFileList(result.log_files);
             if (isInitialLoad) {
                 container.style.opacity = '1';
                 isInitialLoad = false;
+                
             }
+
         } else {
             throw new Error(result.message);
         }
@@ -352,14 +356,26 @@ async function loadLogFiles() {
 }
 
 function toggleLoadingState(loading) {
-    const btn = document.getElementById('refreshLogsButton');
-    if (!btn) return;
+  const btn = document.getElementById('refreshLogsButton');
+  if (!btn) return;
 
-    btn.disabled = loading;
-    btn.querySelector('i').className = loading
-        ? 'bi bi-arrow-clockwise spin'
-        : 'bi bi-arrow-clockwise';
+  // 更明显的按钮状态变化
+  btn.disabled = loading;
+  btn.style.opacity = loading ? 0.7 : 1;
+  
+  // 图标动画控制
+  const icon = btn.querySelector('i');
+  icon.className = loading 
+    ? 'bi bi-arrow-clockwise spin'  // 同时保留原类名
+    : 'bi bi-arrow-clockwise';
+    
+  // 文字状态反馈
+  const textSpan = btn.querySelector('span');
+  textSpan.textContent = loading ? '加载中...' : '刷新列表';
 }
+
+
+
 
 function renderErrorState(message) {
     return `
@@ -1511,4 +1527,360 @@ function formatDate(dateString) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+
+
+
+// 在scripts.js顶部添加（仅执行一次）
+(function injectAnimations() {
+    if (!document.getElementById('custom-animations')) {
+        const animationStyle = document.createElement('style'); // 重命名变量
+        animationStyle.id = 'custom-animations';
+        animationStyle.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(animationStyle);
+    }
+})();
+
+// 在全局作用域定义函数
+// ====================== 文档中心功能 ======================
+window.showDocumentation = async function() {
+    // 防页面晃动预处理
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    document.body.classList.add('modal-open');
+    
+    // 防抖动预处理
+    document.documentElement.style.overflow = 'hidden';
+
+
+    // 创建遮罩层
+    const overlay = document.createElement('div');
+    Object.assign(overlay.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100vw',
+        height: '100vh',
+        background: 'rgba(17, 24, 39, 0.8)',
+        backdropFilter: 'blur(8px)',
+        zIndex: '9999',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        opacity: '0',
+        transition: 'opacity 0.3s ease'
+    });
+
+    // 内容容器
+    const container = document.createElement('div');
+    Object.assign(container.style, {
+        position: 'relative',
+        width: 'min(90%, 1200px)',
+        height: 'min(80vh, 800px)',
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden',
+        transform: 'scale(0.95)',
+        transition: 'transform 0.3s ease'
+    });
+
+    // 标题栏
+    const header = document.createElement('div');
+    Object.assign(header.style, {
+        padding: '24px',
+        background: '#f8fafc',
+        borderBottom: '1px solid #e2e8f0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    });
+    header.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px">
+            <svg style="width: 24px; height: 24px; color: #3b82f6" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path fill="currentColor" d="M14 2v6h6m-4 5H8v2h8v-2zM8 15h8v2H8v-2z"/>
+            </svg>
+            <h2 style="margin:0; font-size: 1.5rem; color: #1e293b">系统文档</h2>
+        </div>
+        <button class="close-btn" style="
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: #64748b
+        ">
+            <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+        </button>
+    `;
+
+    // 内容区域
+    const content = document.createElement('div');
+    Object.assign(content.style, {
+        height: 'calc(100% - 80px)',
+        padding: '32px',
+        overflowY: 'auto',
+        scrollBehavior: 'smooth'
+    });
+
+    // 加载状态
+    content.innerHTML = `
+        <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 16px;
+            color: #64748b
+        ">
+            <div class="spinner" style="
+                width: 48px;
+                height: 48px;
+                border: 4px solid #e2e8f0;
+                border-top-color: #3b82f6;
+                border-radius: 50%;
+                animation: spin 1s linear infinite
+            "></div>
+            <p style="margin:0; font-size: 1rem">文档加载中...</p>
+        </div>
+    `;
+
+    // 组装元素
+    container.appendChild(header);
+    container.appendChild(content);
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+
+    // 动画触发
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        container.style.transform = 'scale(1)';
+    }, 10);
+
+    // 关闭处理
+    const closeHandler = () => {
+        overlay.style.opacity = '0';
+        container.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            overlay.remove();
+            document.body.style.paddingRight = '';
+            document.body.classList.remove('modal-open');
+        }, 300);
+    };
+
+    // 事件绑定
+    overlay.querySelector('.close-btn').addEventListener('click', closeHandler);
+    overlay.addEventListener('click', e => e.target === overlay && closeHandler());
+    
+    // 精准点击区域检测
+    overlay.addEventListener('click', e => {
+        const containerRect = container.getBoundingClientRect();
+        const clickX = e.clientX;
+        const clickY = e.clientY;
+        
+        const isOutside = clickX < containerRect.left - 20 || 
+                        clickX > containerRect.right + 20 ||
+                        clickY < containerRect.top - 20 ||
+                        clickY > containerRect.bottom + 20;
+        
+        if (isOutside) closeHandler();
+    });
+
+    // ESC键支持
+    const escHandler = (e) => e.key === 'Escape' && closeHandler();
+    document.addEventListener('keydown', escHandler);
+
+    // 清理事件监听
+    overlay.addEventListener('animationend', () => {
+        document.removeEventListener('keydown', escHandler);
+    }, {once: true});
+    
+
+    // 加载内容
+    try {
+        const response = await fetch('/get_readme');
+        const markdown = await response.text();
+        
+        // 渲染Markdown
+        const html = marked.parse(markdown);
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // 样式处理
+        const styledContent = `
+            <style>
+                .doc-content {
+                    line-height: 1.75;
+                    font-size: 16px;
+                    color: #334155;
+                }
+                .doc-content h2 {
+                    color: #1e293b;
+                    font-size: 1.5rem;
+                    margin: 2em 0 1em;
+                    padding-bottom: 0.5em;
+                    border-bottom: 2px solid #e2e8f0;
+                }
+                .doc-content pre {
+                    position: relative;
+                    background: #f8fafc;
+                    border-radius: 8px;
+                    padding: 1.5rem;
+                    margin: 1.5rem 0;
+                    overflow-x: auto;
+                }
+                .doc-content code {
+                    font-family: 'SFMono-Regular', Consolas, monospace;
+                    font-size: 14px;
+                    color: #1e293b;
+                }
+                .copy-btn {
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
+                    width: 28px;
+                    height: 28px;
+                    padding: 4px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    background: white;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .copy-btn:hover {
+                    background: #3b82f6;
+                    border-color: #3b82f6;
+                }
+                .copy-btn:hover svg {
+                    stroke: white;
+                }
+            </style>
+            <div class="doc-content">${tempDiv.innerHTML}</div>
+        `;
+
+        content.innerHTML = styledContent;
+
+        // 添加代码复制功能
+        content.querySelectorAll('pre').forEach(pre => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                </svg>
+            `;
+            
+            btn.onclick = async () => {
+                try {
+                    const code = pre.querySelector('code').textContent;
+                    if (navigator.clipboard) {
+                        await navigator.clipboard.writeText(code);
+                    } else {
+                        // 兼容旧版浏览器
+                        const textarea = document.createElement('textarea');
+                        textarea.value = code;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                    }
+                    btn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="#10b981" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    `;
+                    setTimeout(() => {
+                        btn.innerHTML = `
+                            <svg width="16" height="16" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        `;
+                    }, 2000);
+                } catch (error) {
+                    console.error('复制失败:', error);
+                    btn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="#ef4444" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                    `;
+                }
+            };
+            pre.prepend(btn);
+        });
+
+    } catch (error) {
+        content.innerHTML = `
+            <div style="
+                background: #fff4f4;
+                border: 1px solid #fed7d7;
+                color: #dc2626;
+                padding: 24px;
+                border-radius: 8px;
+                margin: 24px;
+                display: flex;
+                gap: 12px;
+                align-items: center
+            ">
+                <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <div>
+                    <h3 style="margin:0 0 8px; color: #b91c1c">文档加载失败</h3>
+                    <p style="margin:0">${error.message}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // 动画样式
+    if (!document.getElementById('doc-anim-style')) {
+        const style = document.createElement('style');
+        style.id = 'doc-anim-style';
+        style.textContent = `
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+};
+
+// ====================== 初始化事件绑定 ======================
+document.addEventListener('DOMContentLoaded', () => {
+    const docBtn = document.getElementById('docCenterBtn');
+    if (docBtn) {
+        docBtn.addEventListener('click', e => {
+            e.preventDefault();
+            window.showDocumentation();
+        });
+    }
+});
+
+window.closeDocumentation = function() {
+    const overlay = document.querySelector('div[style*="background: rgba(0,0,0,0.7)"]');
+    if (overlay) {
+        overlay.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        }, 300);
+    }
 }

@@ -1404,6 +1404,16 @@ def check_service_status_api():
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/get_readme')
+def get_readme():
+    try:
+        readme_path = os.path.join(app.root_path, '../../README.md')
+        with open(readme_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        return str(e), 404
+
 def main():
     """命令行入口点"""
     parser = argparse.ArgumentParser(description="OptiFlux Server")
