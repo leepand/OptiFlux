@@ -1,13 +1,187 @@
-<div class="card mt-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Log Files</span>
-        <button id="refreshLogsButton" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-clockwise"></i> Refresh
-        </button>
-    </div>
-    <div class="card-body">
-        <div id="logFiles" class="d-grid gap-2">
-            <!-- 日志文件列表动态加载 -->
-        </div>
-    </div>
-</div>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+       <!-- 添加字体引用 -->
+   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+   
+       <!-- 可选：添加自定义配置 -->
+     <script>
+       tailwind.config = {
+         corePlugins: {
+           preflight: false, // 禁用默认样式重置（避免与 Bootstrap 冲突）
+         },
+         important: '.tw-container' // 限定作用域（可选）
+       }
+     </script>
+   </head>
+   <div class="card mt-3 border-primary">
+       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+           <div class="d-flex align-items-center">
+               <!--<i class="bi bi-file-earmark-text fs-5 me-2"></i>-->
+               <h3 class="h6 mb-0">Log Files</h3>
+           </div>
+           <button id="refreshLogsButton" class="btn btn-sm btn-light rounded-pill px-3">
+               <i class="bi bi-arrow-clockwise me-1"></i>
+               <span>刷新列表</span>
+           </button>
+       </div>
+       <div class="card-body p-2">
+           <div id="logFiles" class="list-group list-group-flush">
+               <!-- 动态内容保持原有结构 -->
+           </div>
+       </div>
+   </div>
+   
+   <div class="modal fade tw-container" id="logModal" tabindex="-1" data-bs-backdrop="static">
+     <div class="modal-dialog modal-dialog-centered modal-xl">
+       <div class="modal-content border-0 shadow-lg">
+         <!-- Header -->
+         <div class="modal-header bg-slate-800 p-4 border-b border-slate-700">
+           <div class="w-full flex flex-col space-y-2">
+             <div class="flex justify-between items-start">
+               <div class="flex items-center space-x-3">
+                 <i class="bi bi-file-earmark-text text-2xl text-cyan-400"></i>
+                 <h2 class="modal-title text-lg font-semibold text-slate-100 log-title"></h2>
+               </div>
+               <button type="button" data-bs-dismiss="modal" class="btn-close btn-close-white opacity-80 hover:opacity-100"></button>
+             </div>
+   
+             <!-- Control Toolbar -->
+             <div class="flex justify-between items-center">
+               <div class="flex items-center space-x-4 text-sm">
+                 <div class="flex items-center bg-slate-700 rounded-lg px-3 py-1">
+                   <i class="bi bi-database text-cyan-400 mr-2"></i>
+                   <span id="fileSizeInfo" class="text-slate-300">0 KB</span>
+                 </div>
+                 <div class="flex items-center bg-slate-700 rounded-lg px-3 py-1">
+                   <i class="bi bi-clock text-cyan-400 mr-2"></i>
+                   <span id="lastModifiedInfo" class="text-slate-300">--</span>
+                 </div>
+               </div>
+   
+               <div class="flex items-center space-x-4">
+                 <div class="flex items-center bg-slate-700 rounded-lg px-2">
+                   <i class="bi bi-list-ol text-cyan-400 mx-2"></i>
+                   <input type="number" id="logLines" class="w-24 bg-transparent text-slate-200 border-0 focus:ring-0 py-1 text-sm" min="100" max="10000" value="500">
+                 </div>
+                 <div class="flex items-center space-x-2">
+                   <label class="text-slate-400 text-sm">自动刷新</label>
+                   <div class="relative">
+                     <input type="checkbox" id="autoRefresh" class="toggle-checkbox">
+                     <div class="toggle-switch"></div>
+                   </div>
+                   <span id="refreshInterval" class="text-cyan-400 text-sm">5s</span>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+   
+         <!-- Content Area -->
+         <div class="modal-body relative bg-slate-900 p-0">
+           <!-- Loading State -->
+           <div class="log-loading absolute inset-0 bg-slate-900/80 z-50 flex flex-col items-center justify-center space-y-3 transition-opacity">
+             <div class="animate-spin text-cyan-400 text-3xl">⏳</div>
+             <p class="text-slate-300 font-medium">正在加载日志...</p>
+           </div>
+   
+           <!-- Log Content Container -->
+           <div class="log-container relative h-[70vh] overflow-hidden">
+             <pre class="log-content m-0 p-4 bg-gray-900 text-gray-300 overflow-auto" style="height: 70vh; font-family: 'Fira Code', monospace;">
+               <div class="log-line-container">
+                 <!-- Dynamic Log Line Example -->
+                 <div class="log-line hover:bg-gray-800/30 transition-colors px-2 py-1 rounded">
+                   <span class="text-emerald-400">[INFO]</span>
+                   <span class="text-purple-400">2023-12-20T14:23:18Z</span>
+                   <span class="text-cyan-300">Request received</span>
+                   <span class="text-gray-500">from 192.168.1.1</span>
+                 </div>
+               </div>
+             </pre>
+   
+             <!-- Scroll Indicator -->
+             <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-900 pointer-events-none"></div>
+           </div>
+         </div>
+       </div>
+     </div>
+   </div>
+   
+   <style>
+   /* Custom Toggle Switch */
+   .toggle-checkbox:checked + .toggle-switch {
+     @apply bg-cyan-500;
+   }
+   .toggle-checkbox:checked + .toggle-switch:before {
+     transform: translateX(1.25rem);
+   }
+   .toggle-switch {
+     @apply w-12 h-6 bg-slate-600 rounded-full transition-colors duration-200;
+   }
+   .toggle-switch:before {
+     @apply content-[''] absolute w-5 h-5 bg-white rounded-full shadow-sm left-0.5 top-0.5 transition-transform duration-200;
+   }
+   
+   /* Custom Scrollbar */
+   .log-content::-webkit-scrollbar {
+     @apply w-2;
+   }
+   .log-content::-webkit-scrollbar-track {
+     @apply bg-slate-800/50;
+   }
+   .log-content::-webkit-scrollbar-thumb {
+     @apply bg-slate-700 rounded-full hover:bg-slate-600;
+   }
+   
+   /* Log Highlight */
+   .log-content .highlight {
+     @apply bg-amber-500/20 px-1 rounded;
+   }
+   
+   /* Professional Console Styles */
+   .log-content {
+     font-size: 0.875rem; /* 14px */
+     line-height: 1.6;
+     tab-size: 4;
+     letter-spacing: 0.015em;
+   }
+   
+   /* Log Level Colors */
+   .log-line .debug { color: #7dd3fc; }      /* sky-300 */
+   .log-line .info { color: #4ade80; }       /* green-400 */
+   .log-line .warning { color: #fde047; }    /* yellow-300 */
+   .log-line .error { color: #fb7185; }      /* rose-400 */
+   .log-line .critical { color: #ef4444; }   /* red-500 */
+   
+   /* Timestamp Style */
+   .log-timestamp {
+     color: #c084fc;                        /* purple-300 */
+     font-feature-settings: "tnum";
+   }
+   
+   /* Alternate Row Background */
+   .log-line:nth-child(odd) {
+     background: rgba(255,255,255,0.02);
+   }
+   
+   /* Optimized Scrollbar */
+   .log-content::-webkit-scrollbar {
+     width: 8px;
+     background: rgba(0,0,0,0.2);
+   }
+   .log-content::-webkit-scrollbar-thumb {
+     background: rgba(255,255,255,0.1);
+     border-radius: 4px;
+   }
+   
+   /* Smooth Scrolling */
+   .log-container {
+     scroll-behavior: smooth;
+   }
+   
+   /* Word Wrap */
+   .log-content {
+     white-space: pre-wrap;
+     word-break: break-word;
+   }
+   </style>
+   

@@ -126,6 +126,152 @@ function loadModelNames(env, page = 1) {
         });
 }
 
+async function loadModelNames22(env, page = 1) {
+    currentPage = page; // 更新当前页码
+    const modelNamesList = document.getElementById('modelNamesList');
+    const pagination = document.getElementById('pagination');
+    if (!modelNamesList || !pagination) {
+        console.error("Model names list or pagination not found");
+        return;
+    }
+
+    // 显示加载状态
+    modelNamesList.innerHTML = '<div class="text-center"><i class="bi bi-arrow-repeat spinner"></i> Loading model names...</div>';
+    pagination.innerHTML = '';
+
+    try {
+        const response = await fetch(`/model_names?env=${env}&page=${page}&per_page=${perPage}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        console.log("Server response:", result); // 调试信息
+
+        if (result.status === 'success') {
+            // 清空之前的列表
+            modelNamesList.innerHTML = '';
+
+            // 动态生成 model_name 列表
+            if (result.model_names.length === 0) {
+                modelNamesList.innerHTML = '<div class="text-muted">No model names found.</div>';
+            } else {
+                result.model_names.forEach(model => {
+                    const modelNameItem = document.createElement('div');
+                    modelNameItem.className = 'card mb-3';
+                    modelNameItem.innerHTML = `
+                        <div class="card-body">
+                            <h5 class="card-title">${model.model_name}</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="card-text">
+                                        <strong>Version Count:</strong> ${model.version_count}
+                                    </p>
+                                    <p class="card-text">
+                                        <strong>Max Version:</strong> ${model.max_version}
+                                    </p>
+                                    <p class="card-text">
+                                        <strong>Total Size:</strong> ${(model.total_size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                    <p class="card-text">
+                                        <strong>Latest Timestamp:</strong> ${model.latest_timestamp}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="card-text">
+                                        <strong>Recomserver Port:</strong> ${model.recomserver_port}
+                                    </p>
+                                    <p class="card-text">
+                                        <strong>Recomserver Status:</strong> 
+                                        <span class="badge ${model.recomserver_status === 'Running' ? 'bg-success' : 'bg-danger'}">
+                                            ${model.recomserver_status}
+                                        </span>
+                                    </p>
+                                    <p class="card-text">
+                                        <strong>Rewardserver Port:</strong> ${model.rewardserver_port}
+                                    </p>
+                                    <p class="card-text">
+                                        <strong>Rewardserver Status:</strong> 
+                                        <span class="badge ${model.rewardserver_status === 'Running' ? 'bg-success' : 'bg-danger'}">
+                                            ${model.rewardserver_status}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                <button class="btn btn-sm btn-primary" onclick="loadModelVersions('${env}', '${model.model_name}')">
+                                    <i class="bi bi-eye me-1"></i>View Versions
+                                </button>
+                                <button class="btn btn-sm btn-info" onclick="showConfigManagement('${env}', '${model.model_name}')">
+                                    <i class="bi bi-gear me-1"></i>Manage Config
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    modelNamesList.appendChild(modelNameItem);
+                });
+            }
+
+            // 动态生成分页按钮
+            const totalPages = Math.ceil(result.total / perPage);
+            let paginationHTML = '';
+            if (totalPages > 1) {
+                // 上一页按钮
+                paginationHTML += `
+                    <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="loadModelNames('${env}', ${page - 1})">Previous</a>
+                    </li>
+                `;
+
+                // 页码按钮
+                for (let i = 1; i <= totalPages; i++) {
+                    paginationHTML += `
+                        <li class="page-item ${i === page ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="loadModelNames('${env}', ${i})">${i}</a>
+                        </li>
+                    `;
+                }
+
+                // 下一页按钮
+                paginationHTML += `
+                    <li class="page-item ${page === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="loadModelNames('${env}', ${page + 1})">Next</a>
+                    </li>
+                `;
+            }
+            pagination.innerHTML = paginationHTML;
+            console.log("Pagination HTML:", paginationHTML); // 调试信息
+        } else {
+            console.error("Failed to load model names:", result.message);
+            modelNamesList.innerHTML = '<div class="text-danger">Failed to load model names. Please try again later.</div>';
+        }
+    } catch (error) {
+        console.error("Error loading model names:", error);
+        modelNamesList.innerHTML = '<div class="text-danger">An error occurred. Please try again later.</div>';
+    }
+}
+
+// 显示 model_name 列表，隐藏 model_versions 列表
+function showModelNames22() {
+    const modelNamesList = document.getElementById('modelNamesList');
+    const modelVersionsList = document.getElementById('modelVersionsList');
+    const pagination = document.getElementById('pagination'); // 获取分页控件
+    const envSelect = document.getElementById('modelVersionsEnvSelect');
+
+    if (modelNamesList && modelVersionsList && pagination && envSelect) {
+        // 显示 model_name 列表和分页控件，隐藏 model_versions 列表
+        modelNamesList.style.display = 'block';
+        pagination.style.display = 'flex'; // 使用 flex 布局确保样式正确
+        modelVersionsList.style.display = 'none';
+
+        // 启用环境选择框
+        envSelect.disabled = false;
+
+        // 重新加载当前页的 model_name 列表
+        const env = envSelect.value;
+        loadModelNames(env, currentPage);
+    }
+}
+
 /**
  * 显示右上角 Toast 通知
  * @param {string} icon - 图标类型（success, error, warning, info, question）
@@ -252,6 +398,55 @@ async function restartServices(env, modelName, modelVersion) {
     }
 }
 
+// 重启服务
+async function restartVersion(env, modelName, modelVersion) {
+    try {
+        const response = await fetch('/restart_services', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                env: env,
+                model_name: modelName,
+                model_version: modelVersion,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            // 显示成功提示
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Services restarted successfully!',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // 刷新服务状态
+            checkServiceStatus(env, modelName, modelVersion);
+        } else {
+            console.error("Failed to restart services:", result.message);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.message,
+            });
+        }
+    } catch (error) {
+        console.error("Error restarting services:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while restarting services.',
+        });
+    }
+}
 
 // 检查服务状态
 async function checkServiceStatus(env, modelName, modelVersion) {
@@ -305,9 +500,35 @@ window.onload = function () {
     checkServiceStatus(env, modelName, modelVersion);
 };
 
+
+// 重启版本
+async function restartVersion2(env, modelName, modelVersion) {
+    try {
+        const response = await fetch(`/restart_version?env=${env}&model_name=${modelName}&model_version=${modelVersion}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // 重新加载版本列表
+            loadModelVersions(env, modelName);
+        } else {
+            console.error("Failed to restart version:", result.message);
+            alert("Failed to restart version. Please try again later.");
+        }
+    } catch (error) {
+        console.error("Error restarting version:", error);
+        alert("An error occurred. Please try again later.");
+    }
+}
+
+
 // 其他 JavaScript 代码保持不变...
 
-//let currentLogFile = null;  // 当前选中的日志文件
+let currentLogFile = null;  // 当前选中的日志文件
 
 // 动态切换文件或文件夹上传
 document.querySelectorAll('input[name="uploadType"]').forEach(input => {
@@ -386,284 +607,171 @@ document.getElementById('deployForm').addEventListener('submit', async function 
     }
 });
 
-// 修改后的 loadLogFiles 函数
-// 增强版的初始化逻辑
-
-// 优化后的 JavaScript 代码
-let isLoading = false;
-let isInitialLoad = true;
-let currentLogFile = null;
-let refreshInterval = null;
-
+// 加载日志文件列表
 async function loadLogFiles() {
-    const container = document.getElementById('logFiles');
-    if (!container || isLoading) return;
-
     try {
-        isLoading = true;
-        toggleLoadingState(true);
-
-        const response = await fetch(`/log_files?t=${Date.now()}`, {
-            headers: { 'Cache-Control': 'no-cache' }
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
+        const response = await fetch('/log_files');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const result = await response.json();
         if (result.status === 'success') {
-            container.innerHTML = renderFileList(result.log_files);
-            if (isInitialLoad) {
-                container.style.opacity = '1';
-                isInitialLoad = false;
-            }
-        } else {
-            throw new Error(result.message);
-        }
-    } catch (error) {
-        console.error('加载失败:', error);
-        container.innerHTML = renderErrorState(error.message);
-    } finally {
-        isLoading = false;
-        toggleLoadingState(false);
-    }
-}
-
-function toggleLoadingState(loading) {
-    const btn = document.getElementById('refreshLogsButton');
-    if (!btn) return;
-
-    btn.disabled = loading;
-    btn.querySelector('i').className = loading
-        ? 'bi bi-arrow-clockwise spin'
-        : 'bi bi-arrow-clockwise';
-}
-
-function renderErrorState(message) {
-    return `
-        <div class="alert alert-danger m-3">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            ${message}
-        </div>
-    `;
-}
-
-function renderFileList(files) {
-    if (!files || !files.length) return renderEmptyState();
-
-    return files.map(file => {
-        const safeFile = {
-            name: escapeHtml(file.name || '未知文件'),
-            size: formatFileSize(file.size || 0),
-            modified_time: formatDateTime(file.modified_time) || '未知时间'
-        };
-
-        const fileData = JSON.stringify(safeFile)
-                          .replace(/</g, '\\u003c')
-                          .replace(/'/g, '&apos;');
-
-        return `
-            <div class="log-file-item p-3 border-bottom hover-effect">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="flex-grow-1 me-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-file-text me-2 text-primary fs-5"></i>
-                            <strong class="text-truncate">${safeFile.name}</strong>
+            const logFiles = document.getElementById('logFiles');
+            logFiles.innerHTML = result.log_files.map(file => `
+                <div class="log-file-item p-3 border rounded mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${file.name}</strong>
+                            <div class="text-muted small">
+                                <span>Updated: ${file.modified_time}</span> |
+                                <span>Size: ${file.size}</span>
+                            </div>
                         </div>
-                        <div class="d-flex text-muted small">
-                            <span class="me-3">
-                                <i class="bi bi-clock-history me-1"></i>
-                                ${safeFile.modified_time}
-                            </span>
-                            <span>
-                                <i class="bi bi-hdd me-1"></i>
-                                ${safeFile.size}
-                            </span>
-                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="selectLogFile('${file.name}')">
+                            <i class="bi bi-file-earmark-text me-2"></i>View
+                        </button>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary view-log-btn"
-                            data-file='${fileData}'
-                            title="查看完整日志">
-                        <i class="bi bi-eye me-1"></i>
-                        <span class="d-none d-md-inline">查看</span>
-                    </button>
                 </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function escapeHtml(str) {
-    return str.toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function formatFileSize(bytes) {
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = Number(bytes) || 0;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024;
-        unitIndex++;
-    }
-    return `${size.toFixed(unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`;
-}
-
-function formatDateTime(timestamp) {
-    try {
-        return new Date(timestamp).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    } catch (e) {
-        return timestamp;
-    }
-}
-
-function renderEmptyState() {
-    return `
-        <div class="text-center p-4 text-muted">
-            <i class="bi bi-folder-x display-5 mb-3"></i>
-            <p class="mb-0">当前没有可用的日志文件</p>
-            <small>请检查日志目录或联系系统管理员</small>
-        </div>
-    `;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const init = () => {
-        const btn = document.getElementById('refreshLogsButton');
-        if (btn) {
-            btn.addEventListener('click', loadLogFiles);
-            loadLogFiles();
-            return true;
+            `).join('');
+        } else {
+            console.error("Failed to load log files:", result.message);
         }
-        return false;
-    };
-
-    if (!init()) {
-        const checkInterval = setInterval(() => {
-            if (init()) clearInterval(checkInterval);
-        }, 100);
-    }
-});
-
-// 增加旋转动画
-const style = document.createElement('style');
-style.textContent = `
-@keyframes spin { 
-    100% { transform: rotate(360deg); } 
-}
-.bi-arrow-clockwise.spin {
-    animation: spin 1s linear infinite;
-}`;
-document.head.appendChild(style);
-
-
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.view-log-btn');
-    if (btn) {
-        try {
-            const fileData = JSON.parse(btn.dataset.file);
-            selectLogFile(fileData);
-        } catch (error) {
-            console.error('文件数据解析失败:', error);
-            showToast('文件信息异常，请刷新重试', 'danger');
-        }
-    }
-});
-
-async function selectLogFile(fileInfo) {
-    const modal = new bootstrap.Modal('#logModal');
-    currentLogFile = encodeURIComponent(fileInfo.name);
-
-    try {
-        document.querySelector('#logModal .modal-title').textContent = fileInfo.name;
-        await loadLogContent();
     } catch (error) {
-        console.error('初始化日志失败:', error);
-        document.querySelector('#logModal pre').innerHTML = `
-            <div class="alert alert-danger m-3">
-                ${error.message}
-            </div>
-        `;
+        console.error("Error loading log files:", error);
     }
-
-    modal.show();
 }
 
-async function loadLogContent() {
-    if (!currentLogFile) return;
-
-    const linesInput = document.getElementById('logLines');
-    const loading = document.querySelector('.log-loading');
-    const contentElement = document.querySelector('#logModal pre');
-
-    // 校验并限制行数范围
-    let lines = parseInt(linesInput.value) || 500;
-    lines = Math.min(Math.max(lines, 100), 5000);
-    linesInput.value = lines;
-
+async function loadLogFiles2() {
+    const logFiles = document.getElementById('logFiles');
+    logFiles.innerHTML = '<div class="text-center"><i class="bi bi-arrow-repeat"></i> Loading...</div>';
     try {
-        // 显示加载状态
-        contentElement.innerHTML = '<div class="text-center py-4"><div class="spinner-border"></div></div>';
-        loading.classList.remove('hidden');
-
-        // 发起请求
-        const response = await fetch(`/log_content?file=${currentLogFile}&lines=${lines}`);
-        if (!response.ok) throw new Error(`HTTP错误 ${response.status}`);
-
-        // 解析响应
+        const response = await fetch('/log_files');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const result = await response.json();
         if (result.status === 'success') {
-            // 检查内容长度是否为空
-            if (result.content && result.content.length > 0) {
-                contentElement.textContent = result.content;
-                // console.log("result.conten",result.content)
-            } else {
-                contentElement.textContent = "暂无日志信息";
-                   
-            }
+            logFiles.innerHTML = result.log_files.map(file => `
+                <div class="log-file-item p-3 border rounded mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${file.name}</strong>
+                            <div class="text-muted small">
+                                <span>Updated: ${file.modified_time}</span> |
+                                <span>Size: ${file.size}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="selectLogFile('${file.name}')">
+                            <i class="bi bi-file-earmark-text me-2"></i>View
+                        </button>
+                    </div>
+                </div>
+            `).join('');
         } else {
-            throw new Error(result.message || "未知错误");
+            console.error("Failed to load log files:", result.message);
         }
     } catch (error) {
-        // 显示错误信息
-        contentElement.innerHTML = `
-            <div class="alert alert-danger m-3">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                加载失败: ${error.message}
-            </div>`;
-    } finally {
-        // 隐藏加载状态
-        loading.classList.add('hidden');
+        console.error("Error loading log files:", error);
     }
 }
 
+// 点击板块时刷新数据
+function refreshLogFiles() {
+    loadLogFiles2();  // 调用加载函数
+    console.log("Log files refreshed!");
+}
 
-let searchTimeout;
-document.getElementById('logLines').addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(loadLogContent, 500);
-});
-
-document.getElementById('logModal').addEventListener('hidden.bs.modal', () => {
-    clearInterval(refreshInterval);
-    currentLogFile = null;
-});
-
-
+// 绑定点击事件
+document.getElementById('refreshLogsButton').addEventListener('click', refreshLogFiles);
 
 // 初始化加载
 window.onload = loadLogFiles;
+
+// 选择日志文件
+function selectLogFile(fileName) {
+    currentLogFile = fileName;  // 更新当前选中的日志文件
+
+    // 显示 Log Content 模块
+    const logContentCard = document.getElementById('logContentCard');
+    logContentCard.style.display = 'block';
+
+    // 显示当前查看的日志文件名
+    const currentLogFileElement = document.getElementById('currentLogFile');
+    currentLogFileElement.innerText = fileName;
+
+    loadLogContent();  // 加载日志内容
+}
+
+// 加载日志内容
+
+// 加载日志内容（修复版）
+async function loadLogContent22() {
+    if (!currentLogFile) return;
+
+    try {
+        const lines = document.getElementById('logLines').value;
+        const response = await fetch(`/log_content?file=${currentLogFile}&lines=${lines}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            const logContentSection = document.getElementById('logContent');
+            logContentSection.innerHTML = `
+                <div class="d-flex gap-2 align-items-center mb-3 p-2 bg-light rounded">
+                    <!-- 返回按钮 (替换为关闭功能) -->
+                    <button class="btn btn-sm btn-outline-secondary" onclick="hideLogContent()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                    
+                    <!-- 刷新按钮 -->
+                    <button class="btn btn-sm btn-primary" onclick="loadLogContent()" title="刷新日志">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    
+                    <!-- 复制按钮 -->
+                    <button class="btn btn-sm btn-success" onclick="copyContent()" title="复制内容">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+                
+                <!-- 日志内容区域 -->
+                <pre class="p-3 bg-white rounded border" style="overflow: auto; max-height: 70vh;">
+                    ${result.content}
+                </pre>
+            `;
+        } else {
+            console.error("Failed to load log content:", result.message);
+        }
+    } catch (error) {
+        console.error("Error loading log content:", error);
+    }
+}
+
+
+async function loadLogContent() {
+    if (!currentLogFile) {
+        return;  // 如果没有选中日志文件，直接返回
+    }
+
+    try {
+        const lines = document.getElementById('logLines').value;  // 获取用户输入的行数
+        const response = await fetch(`/log_content?file=${currentLogFile}&lines=${lines}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.status === 'success') {
+            const logContent = document.getElementById('logContent');
+            logContent.innerText = result.content;
+           // document.getElementById('logContent').textContent = logContent;
+        } else {
+            console.error("Failed to load log content:", result.message);
+        }
+    } catch (error) {
+        console.error("Error loading log content:", error);
+    }
+}
+
 // 监听 Number of Lines 输入框的变化
 document.getElementById('logLines').addEventListener('change', () => {
     if (currentLogFile) {
@@ -836,6 +944,22 @@ function showModelNames() {
     }
 }
 
+function showModelNames23() {
+    const modelNamesList = document.getElementById('modelNamesList');
+    const modelVersionsList = document.getElementById('modelVersionsList');
+    const pagination = document.getElementById('pagination');
+
+    if (modelNamesList && modelVersionsList && pagination) {
+        // 显示模型列表和分页控件，隐藏版本列表
+        modelNamesList.style.display = 'block';
+        pagination.style.display = 'flex';
+        modelVersionsList.style.display = 'none';
+
+        // 重新加载模型列表
+        const env = document.getElementById('modelVersionsEnvSelect').value;
+        loadModelNames(env, currentPage);
+    }
+}
 
 function loadModelVersions(env, modelName) {
     const modelVersionsList = document.getElementById('versionsContent');
@@ -943,6 +1067,113 @@ function loadModelVersions(env, modelName) {
         });
 }
 
+async function loadModelVersions22(env, modelName) {
+    const modelNamesList = document.getElementById('modelNamesList');
+    const modelVersionsList = document.getElementById('modelVersionsList');
+    const pagination = document.getElementById('pagination');
+    const envSelect = document.getElementById('modelVersionsEnvSelect');
+    if (!modelNamesList || !modelVersionsList || !pagination || !envSelect) {
+        console.error("Required elements not found");
+        return;
+    }
+
+    // 隐藏 model_name 列表和分页控件，显示 model_versions 列表
+    modelNamesList.style.display = 'none';
+    pagination.style.display = 'none';
+    modelVersionsList.style.display = 'block';
+
+    // 禁用环境选择框
+    envSelect.disabled = true;
+
+    // 显示加载状态
+    modelVersionsList.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <button class="btn btn-outline-secondary" onclick="showModelNames()">
+                <i class="bi bi-arrow-left me-2"></i>Back to Model Names
+            </button>
+        </div>
+        <div class="text-center"><i class="bi bi-arrow-repeat spinner"></i> Loading model versions...</div>
+    `;
+
+    try {
+        const response = await fetch(`/model_versions?env=${env}&model_name=${modelName}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // 清空之前的列表
+            let versionsHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" onclick="showModelNames()">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Model Names
+                    </button>
+                </div>
+            `;
+
+            // 动态生成 model_versions 列表
+            if (result.model_versions.length === 0) {
+                versionsHTML += '<div class="text-muted">No model versions found.</div>';
+            } else {
+                result.model_versions.forEach(v => {
+                    versionsHTML += `
+                        <div class="card mb-2 ${v.is_serving ? 'border-primary' : ''}">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    ${v.model_name} - ${v.model_version}
+                                    ${v.is_serving ? '<span class="badge bg-primary ms-2">Serving</span>' : ''}
+                                </h5>
+                                <p class="card-text">
+                                    <small class="text-muted">Last Updated: ${v.timestamp}</small>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted">Total Size: ${(v.size / 1024 / 1024).toFixed(2)} MB</small>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted">Recomserver Port: ${v.recomserver_port}</small>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted">Rewardserver Port: ${v.rewardserver_port}</small>
+                                </p>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-sm btn-primary" onclick="loadModelFiles('${env}', '${v.model_name}', '${v.model_version}')">
+                                        <i class="bi bi-folder me-1"></i>View Codes
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="restartServices('${env}', '${v.model_name}', '${v.model_version}')">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Restart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            modelVersionsList.innerHTML = versionsHTML;
+        } else {
+            console.error("Failed to load model versions:", result.message);
+            modelVersionsList.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" onclick="showModelNames()">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Model Names
+                    </button>
+                </div>
+                <div class="text-danger">Failed to load model versions. Please try again later.</div>
+            `;
+        }
+    } catch (error) {
+        console.error("Error loading model versions:", error);
+        modelVersionsList.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button class="btn btn-outline-secondary" onclick="showModelNames()">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Model Names
+                </button>
+            </div>
+            <div class="text-danger">An error occurred. Please try again later.</div>
+        `;
+    }
+}
+
 // 加载文件/目录列表
 // 加载文件/目录列表
 async function loadModelFiles(env, modelName, modelVersion, path = '') {
@@ -1048,6 +1279,28 @@ async function viewFileContent(fileName) {
             `;
             document.getElementById('modelFilesSection').style.display = 'none';
             fileContentSection.style.display = 'block';
+        } else {
+            console.error("Failed to load file content:", result.message);
+        }
+    } catch (error) {
+        console.error("Error loading file content:", error);
+    }
+}
+async function viewFileContent22(fileName) {
+    const env = document.getElementById('modelVersionsEnvSelect').value;
+    const filePath = currentPath ? `${currentPath}/${fileName}` : fileName;
+
+    try {
+        const response = await fetch(`/model_file_content?env=${env}&model_name=${currentModelName}&model_version=${currentModelVersion}&path=${filePath}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            document.getElementById('fileContent').innerText = result.content;
+            document.getElementById('modelFilesSection').style.display = 'none';
+            document.getElementById('fileContentSection').style.display = 'block';
         } else {
             console.error("Failed to load file content:", result.message);
         }
@@ -1448,6 +1701,17 @@ async function editUser(userId) {
     }
 }
 
+// 删除用户
+async function deleteUser22(userId) {
+    if (!confirm('确定要删除该用户吗？')) return;
+    try {
+        const response = await fetch(`/users/delete/${userId}`, { method: 'POST' });
+        if (!response.ok) throw new Error('删除用户失败');
+        loadUserData(); // 重新加载数据
+    } catch (error) {
+        showError(error.message);
+    }
+}
 
 let userIdToDelete = null; // 存储待删除的用户ID
 
@@ -1496,6 +1760,46 @@ function openUserForm(user) {
 // 处理表单提交
 // 处理表单提交
 let isSubmitting = false;  // 提交状态锁
+
+async function handleUserSubmit22(event) {
+    event.preventDefault();
+    if (isSubmitting) return;  // 如果正在提交，直接返回
+    isSubmitting = true;       // 锁定
+    const formData = {
+        id: document.getElementById('userId').value || null, // 允许 ID 为空
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value
+    };
+
+    try {
+        const response = await fetch('/users/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, // 确保是 application/json
+            body: JSON.stringify(formData)
+        });
+
+        // 检查响应状态
+        if (!response.ok) {
+            // 解析错误信息
+            const errorData = await response.json();
+            throw new Error(errorData.message || '保存用户失败');
+        }
+
+        // 保存成功
+        loadUserData(); // 重新加载数据
+        document.getElementById('userForm').reset(); // 重置表单
+        const modal = bootstrap.Modal.getInstance(document.getElementById('userFormModal'));
+        if (modal) {
+            modal.hide();
+        }
+    } catch (error) {
+        // 显示错误信息
+        showError(error.message || '请求失败，请稍后重试');
+    }finally {
+        isSubmitting = false;  // 无论成功与否，解除锁定
+    }
+}
 
 async function handleUserSubmit(event) {
     event.preventDefault();

@@ -521,17 +521,19 @@ def get_log_files():
                         "%Y-%m-%d %H:%M:%S"
                     )
                     # 获取文件大小（转换为MB或KB）
-                    file_size = file_stat.st_size
-                    if file_size > 1024 * 1024:  # 大于1MB
-                        file_size = f"{file_size / (1024 * 1024):.2f} MB"
-                    else:
-                        file_size = f"{file_size / 1024:.2f} KB"
+                    #file_size = file_stat.st_size
+                    #if file_size > 1024 * 1024:  # 大于1MB
+                    #    file_size = f"{file_size / (1024 * 1024):.2f} MB"
+                    #else:
+                    #    file_size = f"{file_size / 1024:.2f} KB"
+                        
+                    file_size_bytes = file_stat.st_size  # 保留字节数
                     # 添加到日志文件列表
                     log_files.append(
                         {
                             "name": file,
                             "modified_time": modified_time_str,
-                            "size": file_size,
+                            "size": file_size_bytes# file_size,
                         }
                     )
         return jsonify({"status": "success", "log_files": log_files})
