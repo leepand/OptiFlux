@@ -56,16 +56,27 @@ const perPage = 10; // 每页显示的条目数
  * @param {number} [timer=3000] - 自动关闭时间（毫秒）
  */
 function showToast(icon, title, timer = 3000) {
-    Swal.fire({
+    // 关闭所有现存弹窗
+    Swal.close();
+
+    // 使用 mixin 保持队列
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: timer,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+
+    Toast.fire({
         icon: icon,
-        title: title,
-        toast: true, // 启用 Toast 模式
-        position: 'top-end', // 固定在右上角
-        showConfirmButton: false, // 不显示确认按钮
-        timer: timer, // 自动关闭时间
+        title: title
     });
 }
-
 // 滚动锁定管理
 let scrollPosition = 0;
 
@@ -632,7 +643,7 @@ function showModelVersionsSection() {
     console.log("Model Versions section clicked");  // 调试信息
 
     // 调用 showSection 函数来切换界面
-    showSection('modelVersions');
+    // showSection('modelVersions');
 
     // 显示 Model Versions 模块
     const modelVersionsSection = document.getElementById('modelVersionsSection');
@@ -1143,8 +1154,61 @@ function cancelEdit() {
     loadConfig();
 }
 
-// 保存配置文件
 async function saveConfig() {
+    try {
+        const newConfig = editor.get();
+        const response = await fetch('/update_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                env: currentEnv,
+                model_name: currentModelName,
+                config: newConfig
+            }),
+        });
+
+        // 增强HTTP错误处理
+        if (!response.ok) {
+            let serverError = `HTTP Error (${response.status})`;
+            try {
+                const errorBody = await response.json();
+                if (errorBody.message) serverError = errorBody.message;
+            } catch (e) {
+                // 如果响应不是JSON格式则保持默认错误信息
+            }
+            throw new Error(serverError);
+        }
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            console.log('[Toast调试] 显示成功提示');
+            showToast('success', 'Config updated successfully!');
+            cancelEdit();
+            hideConfigManagement();
+            loadModelNames(currentEnv, currentPage);
+        } else {
+            // 处理业务逻辑错误
+            throw new Error(result.message || 'Configuration validation failed');
+        }
+    } catch (error) {
+        console.error("Config save error:", error);
+        console.groupCollapsed('[错误追踪] 配置保存失败');
+        console.log('错误对象:', error);
+        console.log('错误类型:', error?.constructor?.name);
+        console.log('错误栈:', error?.stack);
+        console.groupEnd();
+        // 显示完整的错误链信息
+        const errorMessage = error instanceof Error ?
+            `${error.message}${error.cause ? ` (${error.cause})` : ''}` :
+            'Unknown configuration error';
+
+        console.log('[Toast调试] 显示错误提示');
+        showToast("error", `Save failed: ${errorMessage}`, 5000);
+    }
+}
+
+// 保存配置文件
+async function saveConfig22() {
     try {
         const newConfig = editor.get(); // 获取编辑器中的 JSON 数据
         const response = await fetch('/update_config', {
