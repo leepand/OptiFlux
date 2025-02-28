@@ -696,7 +696,7 @@ def login():
             session.modified = True  # 显式标记会话已修改
 
             add_log("用户登陆", f"{username}:登陆成功", user.id)
-            flash("Logged in successfully.")
+            # flash("Logged in successfully.")
             # return redirect(url_for("index"))
             # 检查是否需要返回 JSON 响应
             if request.headers.get("Accept") == "application/json":
