@@ -86,12 +86,9 @@ function unlockScroll() {
 }
 
 async function restartServices(env, modelName, modelVersion) {
-    // 锁定页面滚动
     lockScroll();
-    
     const restartButton = document.querySelector(`button[onclick="restartServices('${env}', '${modelName}', '${modelVersion}')"]`);
     
-    // 创建加载层
     const overlay = document.createElement('div');
     overlay.className = 'loading-overlay';
     overlay.innerHTML = `
@@ -119,6 +116,11 @@ async function restartServices(env, modelName, modelVersion) {
                         <div class="version-label">Status</div>
                         <div class="version-value text-warning">Initializing</div>
                     </div>
+                    <!-- 新增错误信息区域 -->
+                    <div class="version-detail error-detail" style="display: none;">
+                        <div class="version-label">Error</div>
+                        <div class="version-value text-danger error-message"></div>
+                    </div>
                 </div>
 
                 <div class="loading-status">
@@ -136,7 +138,6 @@ async function restartServices(env, modelName, modelVersion) {
         const statusElement = overlay.querySelector('.version-value.text-warning');
         statusElement.textContent = 'In Progress';
 
-        // 模拟API调用延迟
         const response = await fetch('/restart_services', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -149,13 +150,28 @@ async function restartServices(env, modelName, modelVersion) {
 
         result = await response.json();
         
-        statusElement.textContent = result.status === 'success' ? 'Completed' : 'Failed';
-        statusElement.className = `version-value ${result.status === 'success' ? 'text-success' : 'text-danger'}`;
+        if (result.status === 'success') {
+            statusElement.textContent = 'Completed';
+            statusElement.className = 'version-value text-success';
+        } else {
+            statusElement.textContent = 'Failed';
+            statusElement.className = 'version-value text-danger';
+            // 显示错误详细信息
+            const errorDetail = overlay.querySelector('.error-detail');
+            const errorMessage = errorDetail.querySelector('.error-message');
+            errorDetail.style.display = 'flex';
+            errorMessage.textContent = result.message || 'No error message provided';
+        }
 
     } catch (error) {
         const statusElement = overlay.querySelector('.version-value.text-warning');
         statusElement.textContent = 'Network Error';
         statusElement.className = 'version-value text-danger';
+        // 显示网络错误详细信息
+        const errorDetail = overlay.querySelector('.error-detail');
+        const errorMessage = errorDetail.querySelector('.error-message');
+        errorDetail.style.display = 'flex';
+        errorMessage.textContent = error.message || 'Failed to connect to server';
         console.error('Restart failed:', error);
         result = { status: 'error' };
     } finally {
@@ -174,6 +190,7 @@ async function restartServices(env, modelName, modelVersion) {
         }, delay);
     }
 }
+
 
 
 // 检查服务状态
