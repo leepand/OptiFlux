@@ -10,6 +10,7 @@ import os
 from datetime import timedelta
 
 from flask_session import Session
+from ..config import META_DB_DIR
 
 login_manager = LoginManager()
 login_manager.session_protection = "strong"
@@ -37,7 +38,7 @@ def create_app():
     app.secret_key = "secret-key"
 
     # 配置 SQLite 数据库
-    basedir = os.path.abspath(os.path.dirname(__file__))
+    basedir = META_DB_DIR#  os.path.abspath(os.path.dirname(__file__))
 
     os.makedirs(os.path.join(basedir, "data"), exist_ok=True)
 

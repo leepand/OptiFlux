@@ -49,6 +49,7 @@ SERVER_PORT=8912
 DEV_ENV_DIR=./models/dev
 PREPROD_ENV_DIR=./models/preprod
 PROD_ENV_DIR=./models/prod
+META_DB_DIR=./models/db
 
 # 日志配置
 LOG_DIR={log_base_path}
