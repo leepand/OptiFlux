@@ -18,6 +18,28 @@ logging.basicConfig(
 
 log_base_path = os.path.join(data_dir_default(), "logs")
 
+DEFAULT_ENV_TEMPLATE_old = f"""# OptiFlux 环境配置
+# 服务器基础配置
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8912
+
+# 模型目录配置
+DEV_ENV_DIR=./models/dev
+PREPROD_ENV_DIR=./models/preprod
+PROD_ENV_DIR=./models/prod
+
+# 日志配置
+LOG_DIR={log_base_path}
+
+# Flask 开发模式配置
+FLASK_DEBUG=true
+
+# Gunicorn 生产模式配置
+GUNICORN_WORKERS=4
+GUNICORN_TIMEOUT=30
+GUNICORN_LOGLEVEL=info
+"""
+
 DEFAULT_ENV_TEMPLATE = f"""# OptiFlux 环境配置
 # 服务器基础配置
 SERVER_HOST=0.0.0.0
@@ -38,6 +60,20 @@ FLASK_DEBUG=true
 GUNICORN_WORKERS=4
 GUNICORN_TIMEOUT=30
 GUNICORN_LOGLEVEL=info
+
+# 节点集群配置（JSON格式）
+NODES={json.dumps([
+    {
+        "name": "DF-1",
+        "url": "http://example:8913/product",
+        "status":"healthy"
+    },
+    {
+        "name": "DF-2", 
+        "url": "http://example:8912/product",
+        "status":"healthy"
+    }
+], separators=(',', ':'))}
 """
 
 # SERVER_URL = "http://35.165.37.114:8913"
@@ -530,12 +566,12 @@ def create_project(args):
         src_dir / "decision_module.py": "# 决策模块\n",
         src_dir / "strategy_module.py": "# 策略模块\n",
         src_dir
-        / "model.py": f"""from optiflux import Model
+        / "model.py": f"""from optiflux.core import BaseModel
 import logging
 
 logger = logging.getLogger("optiflux.{model_name}")
 
-class {model_name.title()}Model(Model):
+class {model_name.title()}Model(BaseModel):
     DEFAULT_CONFIG = {{
         "model_path": "models/{model_name}_v1.pt",
         "threshold": 0.5
@@ -545,31 +581,31 @@ class {model_name.title()}Model(Model):
         logger.info("Loading {model_name} model...")
         # 加载模型逻辑
 
-    def _predict(self, input_data):
+    def predict(self, input_data):
         logger.debug("Predicting with {model_name} model...")
         # 预测逻辑
 """,
         src_dir
-        / "recomserver.py": f"""from optiflux import Model, make
+        / "recomserver.py": f"""from optiflux import BaseModel, ModelLibrary, make
 from optiflux.utils.logx import LoggerManager
 from optiflux import make
-from optiflux.api import create_optiflux_app
 
 import traceback
 import numpy as np
 import os
 import json
 
-from .utils import MODEL_ENV, VERSION
+from utils import MODEL_ENV, VERSION
 
 
-class RecomServer(Model):
+class RecomServer(BaseModel):
     def _load(self):
         self.model_name = f"{model_name}"
   
-        self.model_db = make(env=MODEL_ENV,
-            model_name=self.model_name,
-            db_name="personalized_unispinux_strategy2.db"
+        self.model_db = make(
+            f"cache/{{self.model_name}}-v{{VERSION}}",
+            db_name="{model_name}.db",
+            env=MODEL_ENV,
         )
         self.logger=LoggerManager()
 
@@ -590,10 +626,27 @@ class RecomServer(Model):
             return items
 
 # 初始化模型库
-app = create_optiflux_app(model={{"recomserver": RecomServer}}) # ✅ 关键：导出 FastAPI 实例
+library = ModelLibrary(
+    models={{"recomserver": RecomServer}},
+    #config_path="config.yml",
+        #cache_dir=".prod_cache",
+    size_limit=5*1024**3  # 5GB 缓存
+)
+
+# 创建 API 应用
+api_config={{
+        "title": "Production Recomserver API",
+        "api_prefix": "",
+        "enable_docs": True
+    }}
+api_service = create_optiflux_app(
+    library,
+    **api_config
+)
+app = api_service.app  # ✅ 关键：导出 FastAPI 实例
 """,
         src_dir
-        / "rewardserver.py": f"""from optiflux import Model, make
+        / "rewardserver.py": f"""from optiflux import BaseModel, ModelLibrary, make
 from optiflux.utils.logx import LoggerManager
 from optiflux.api import create_optiflux_app
 
@@ -603,10 +656,10 @@ import numpy as np
 import os
 import json
 
-from .utils import MODEL_ENV, VERSION
+from utils import MODEL_ENV, VERSION
 
 
-class RewardServer(Model):
+class RewardServer(BaseModel):
     def _load(self):
         self.model_name = f"{model_name}"
   
@@ -634,9 +687,26 @@ class RewardServer(Model):
             return items
 
 # 初始化模型库
-app = create_optiflux_app(model={{"rewardserver": RewardServer}}) # ✅ 关键：导出 FastAPI 实例
+library = ModelLibrary(
+    models={{"rewardserver": RewardServer}},
+    #config_path="config.yml",
+    #cache_dir=".prod_cache",
+    size_limit=5*1024**3  # 5GB 缓存
+)
+
+# 创建 API 应用
+api_config={{
+        "title": "Production Rewardserver API",
+        "api_prefix": "",
+        "enable_docs": True
+    }}
+api_service = create_optiflux_app(
+    library,
+    **api_config
+)
+app = api_service.app  # ✅ 关键：导出 FastAPI 实例
 """,
-        utils_dir / "__init__.py": "# 工具模块\n MODEL_ENV, VERSION='dev','0.0'\n",
+        utils_dir / "__init__.py": "# 工具模块\n",
         utils_dir
         / "config_loader.py": """import yaml
 from pathlib import Path

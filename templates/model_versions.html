@@ -1,110 +1,199 @@
-<div class="card mt-3">
-    <div class="card-header">
-        Model Versions
-    </div>
-    <div class="card-body">
-        <!-- 环境选择框 -->
-        <div class="mb-3">
-            <label for="modelVersionsEnvSelect" class="form-label">Environment</label>
-            <select class="form-select" id="modelVersionsEnvSelect" onchange="loadModelNames(this.value)">
-                <option value="dev">Development</option>
-                <option value="preprod">Preprod</option>
-                <option value="prod">Production</option>
-            </select>
-        </div>
-
-        <!-- Model Names 列表 -->
-        <div id="modelNamesList" class="mb-4">
-            <!-- 动态加载的 model_name 列表 -->
-        </div>
-
-        <!-- 分页控件 -->
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center" id="pagination">
-                <!-- 动态生成分页按钮 -->
-            </ul>
-        </nav>
-
-        <!-- Model Versions 列表 -->
-        <div id="modelVersionsList" class="mt-3" style="display: none;">
-            <!-- 返回按钮 -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <button class="btn btn-outline-secondary" onclick="showModelNames()">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Model Names
-                </button>
+<style>
+    /* 或通过自定义间距 */
+    
+    /* Pagination */
+    .pagination {
+      margin-top: 20px;
+      display: flex;
+      list-style: none;
+      padding: 0;
+    }
+    
+    .pagination .page-item {
+      margin: 0 4px;
+    }
+    
+    .pagination .page-link {
+      font-size: 0.95rem;
+      padding: 8px 14px;
+      color: #0d6efd;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s;
+    }
+    
+    .pagination .page-item.active .page-link {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      color: #fff;
+    }
+    
+    .pagination .page-link:hover {
+      background-color: #e9ecef;
+      color: #0056b3;
+      transform: translateY(-2px);
+    }
+    
+    
+    /* 添加过渡动画 */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    
+    .loading-overlay {
+      animation: fadeIn 0.3s ease forwards;
+    }
+    
+    .noscroll {
+      position: fixed;
+      width: 100%;
+    }
+    /* 新增/修改以下CSS */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1050;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+    
+    .loading-overlay-inner {
+      max-width: 600px;
+      width: 95%;
+      margin: auto;
+      transform: translateZ(0); /* 修复某些浏览器渲染问题 */
+    }
+    
+    .version-card {
+      position: relative;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      border-radius: 0.5rem;
+    }
+    .noscroll {
+      position: fixed;
+      width: 100%;
+      top: calc(-1 * var(--scroll-y, 0));
+    }
+    </style>
+    
+    <div class="card mt-3">
+     
+        <div class="card-body">
+            <!-- 环境选择框 -->
+            <div class="mb-3">
+                <label for="modelVersionsEnvSelect" class="form-label">Environment</label>
+                <select class="form-select" id="modelVersionsEnvSelect" onchange="loadModelNames(this.value)">
+                    <option value="dev">Development</option>
+                    <option value="preprod">Staging</option>
+                    <option value="prod">Production</option>
+                </select>
             </div>
-            <!-- 动态加载的 model_versions 列表 -->
-            <div id="versionsContent">
-                <!-- 版本列表内容将动态加载到这里 -->
+    
+            <!-- Model Names 列表 -->
+            <div id="modelNamesList" class="mb-4">
+                <!-- 动态加载的 model_name 列表 -->
             </div>
-        </div>
-
-        <!-- 文件/目录列表 -->
-        <div id="modelFilesSection" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <button class="btn btn-outline-secondary" onclick="showModelVersions()">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Versions
-                </button>
-                <button class="btn btn-outline-primary" onclick="goUpDirectory()" style="display: none;">
-                    <i class="bi bi-arrow-up me-2"></i>Go Up
-                </button>
-            </div>
-            <div id="modelFilesList" class="mt-3">
-                <!-- 文件/目录列表将动态加载到这里 -->
-            </div>
-        </div>
-
-        <!-- 文件内容展示区域 -->
-        <div id="fileContentSection" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <button class="btn btn-outline-secondary" onclick="hideFileContent()">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Files
-                </button>
-            </div>
-            <pre id="fileContent" class="bg-light p-3 border rounded"></pre>
-        </div>
-
-        <!-- 配置管理区域 -->
-        <div id="configManagementSection" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <button class="btn btn-outline-secondary" onclick="hideConfigManagement()">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Model Versions
-                </button>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    Config Management
+    
+            <!-- 分页控件 -->
+            <nav aria-label="Page navigation" >
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- 动态生成分页按钮 -->
+                </ul>
+            </nav>
+    
+            <!-- Model Versions 列表 -->
+            <div id="modelVersionsList" class="mt-3" style="display: none;">
+                <!-- 返回按钮 -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" onclick="showModelNames()">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Model Names
+                    </button>
                 </div>
-                <div class="card-body">
-                    <div id="jsoneditor" style="height: 300px;"></div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <button id="editConfigButton" class="btn btn-primary" onclick="editConfig()">
-                            <i class="bi bi-pencil me-1"></i>Edit Config
-                        </button>
-                        <button id="saveConfigButton" class="btn btn-success" onclick="saveConfig()" style="display: none;">
-                            <i class="bi bi-save me-1"></i>Save Config
-                        </button>
-                        <button id="cancelEditButton" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;">
-                            <i class="bi bi-x me-1"></i>Cancel
-                        </button>
+                <!-- 动态加载的 model_versions 列表 -->
+                <div id="versionsContent">
+                    <!-- 版本列表内容将动态加载到这里 -->
+                </div>
+            </div>
+    
+            <!-- 文件/目录列表 -->
+            <div id="modelFilesSection" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" onclick="showModelVersions()">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Versions
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="goUpDirectory()" style="display: none;">
+                        <i class="bi bi-arrow-up me-2"></i>Go Up
+                    </button>
+                </div>
+                <div id="modelFilesList" class="mt-3">
+                    <!-- 文件/目录列表将动态加载到这里 -->
+                </div>
+            </div>
+    
+            <!-- 文件内容展示区域 -->
+            <div id="fileContentSection" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" onclick="hideFileContent()">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Files
+                    </button>
+                </div>
+                <pre id="fileContent" class="bg-light p-3 border rounded"></pre>
+            </div>
+    
+            <!-- 配置管理区域 -->
+            <div id="configManagementSection" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary" onclick="hideConfigManagement()">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Model Versions
+                    </button>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        Config Management
+                    </div>
+                    <div class="card-body">
+                        <div id="jsoneditor" style="height: 300px;"></div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button id="editConfigButton" class="btn btn-primary" onclick="editConfig()">
+                                <i class="bi bi-pencil me-1"></i>Edit Config
+                            </button>
+                            <button id="saveConfigButton" class="btn btn-success" onclick="saveConfig()" style="display: none;">
+                                <i class="bi bi-save me-1"></i>Save Config
+                            </button>
+                            <button id="cancelEditButton" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;">
+                                <i class="bi bi-x me-1"></i>Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 加载状态提示 -->
-        <div id="loading" style="display: none;">
-            <i class="bi bi-arrow-repeat spinner"></i> Serving...
+    
+            <!-- 加载状态提示 -->
+            <div id="loading" style="display: none;">
+                <i class="bi bi-arrow-repeat spinner"></i> Serving...
+            </div>
         </div>
     </div>
-</div>
-
-<!-- Toast 提示框 -->
-<div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px;">
-    <div class="d-flex">
-        <div class="toast-body">
-            Config updated successfully!
+    
+    <!-- Toast 提示框 -->
+    <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px;">
+        <div class="d-flex">
+            <div class="toast-body">
+                Config updated successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
-</div>

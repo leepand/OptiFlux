@@ -1,77 +1,524 @@
-<div class="container-fluid pt-4">
-    <!-- 新增用户按钮 -->
-    <div class="mb-3">
-        <button type="button" class="btn btn-success" onclick="openUserForm()">新增用户</button>
-    </div>
-
-    <!-- 状态指示器 -->
-    <div id="userManagementLoader" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">加载中...</span>
+<style>
+    /* 继承审计日志的核心样式并扩展 */
+    .user-card {
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #ffffff 0%, #f8f9fc 100%);
+      box-shadow: 0 8px 32px rgba(0, 34, 77, 0.1);
+    }
+    
+    .user-table {
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: rgba(241, 243, 245, 0.5);
+      --bs-table-hover-bg: rgba(59, 130, 246, 0.08);
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .user-table thead {
+      background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+      color: white;
+      position: relative;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    
+    .user-table thead::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .user-table th {
+      text-transform: uppercase;
+      color: #F7FAFC; /* 雪白色 */
+      font-size: 0.875rem;
+      letter-spacing: 0.05em;
+      padding: 1.25rem 2rem;
+      border: none;
+    }
+    
+    .user-table th:first-child {
+      border-radius: 12px 0 0 0;
+    }
+    
+    .user-table th:last-child {
+      border-radius: 0 12px 0 0;
+    }
+    
+    .user-table th, .user-table td {
+      padding: 1rem 1.75rem;
+    }
+    
+    .user-table td {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    /* 操作按钮组样式 */
+    .btn-action {
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-edit {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+    
+    .btn-edit:hover {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+    
+    .btn-delete:hover {
+      background: #ef4444;
+      color: white;
+    }
+    
+    /* 自定义样式 */
+    .modal-content {
+        box-shadow: 0 8px 32px rgba(0, 34, 77, 0.2);
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        background-color: #3b82f6; /* Primary color for header */
+        color: white;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        padding: 1rem 1.5rem;
+    }
+    
+    .modal-title {
+        font-size: 1.25rem; /* Slightly larger font for title */
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    
+    .modal-title i {
+        margin-right: 0.5rem; /* Space between icon and title */
+    }
+    
+    .btn-close {
+        opacity: 1; /* Ensure close button is visible */
+    }
+    
+    .modal-body {
+        padding: 2rem;
+        font-size: 1rem; /* Consistent font size */
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #4b5563; /* Neutral color for labels */
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #e2e8f0; /* Light border */
+        border-radius: 8px; /* Rounded input fields */
+        padding: 0.75rem 1rem;
+        font-size: 1rem; /* Consistent font size */
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #3b82f6; /* Highlight on focus */
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f9fafb; /* Light background for footer */
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+    
+    .btn-primary {
+        background-color: #3b82f6;
+        border: none;
+    }
+    
+    .btn-outline-secondary {
+        border: 1px solid #d1d5db; /* Neutral border */
+        color: #4b5563; /* Neutral text color */
+    }
+    
+    .btn-primary:hover, .btn-outline-secondary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary:active, .btn-outline-secondary:active {
+        transform: translateY(0);
+    }
+    
+    </style>
+    
+    <div class="card user-card">
+      <div class="card-header audit-header d-flex justify-content-between align-items-center">
+        <h2 class="audit-header-title mb-0"></h2>
+        <button
+          id="createUserButton"
+          class="btn btn-success d-flex align-items-center"
+          onclick="openUserForm()"
+        >
+          <i class="bi bi-person-plus me-2"></i>
+          新增用户
+        </button>
+      </div>
+    
+      <div class="card-body position-relative">
+        <!-- 状态指示器 -->
+        <div id="userManagementLoader" class="text-center py-5" style="display: none;">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted mt-2">正在加载用户数据...</p>
         </div>
-        <p class="text-muted mt-2">正在加载用户数据...</p>
+    
+        <!-- 错误提示 -->
+        <div id="userManagementError" class="alert alert-danger d-none" role="alert"></div>
+    
+        <!-- 主内容 -->
+        <div class="table-responsive">
+          <table class="table user-table align-middle">
+            <thead>
+              <tr>
+                <th class="ps-3">用户ID</th>
+                <th>用户名</th>
+                <th>角色</th>
+                <th class="pe-3">注册时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="userManagementContent">
+              <!-- 动态生成内容 -->
+              <tr>
+                <td>001</td>
+                <td>admin</td>
+                <td><span class="badge bg-primary bg-opacity-10 text-primary">管理员</span></td>
+                <td>2024-06-15 14:22:35</td>
+                <td>
+                  <button class="btn-action btn-edit me-2">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn-action btn-delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+    
+        <!-- 分页 -->
+        <nav class="border-top mt-3">
+          <ul class="pagination pagination-pro justify-content-end my-3 mx-3">
+            <li class="page-item disabled">
+              <a class="page-link" href="#">
+                <i class="bi bi-chevron-left"></i>
+              </a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <!--<li class="page-item"><a class="page-link" href="#">2</a></li>-->
+            <!--<li class="page-item"><a class="page-link" href="#">3</a></li>-->
+            <li class="page-item">
+              <a class="page-link" href="#">
+                <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
-
-    <!-- 错误显示区（初始隐藏） -->
-    <div id="userManagementError" class="alert alert-danger d-none" role="alert" aria-live="polite"></div>
-
-    <!-- 主内容容器（动态生成） -->
-    <div id="userManagementContent" aria-live="polite"></div>
-</div>
-
-<!-- 统一的用户表单模态框 -->
-<div class="modal fade" id="userFormModal" tabindex="-1" aria-labelledby="userFormModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    
+    <!-- 模态框保持原有功能，样式微调 -->
+    <!-- 统一的用户表单模态框 -->
+    <!-- 用户表单模态框 -->
+    <div class="modal fade" id="userFormModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="userFormModalLabel">用户表单</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
-            </div>
-            <div class="modal-body">
-                <form id="userForm" onsubmit="handleUserSubmit(event)">
-                    <input type="hidden" id="userId">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">用户名</label>
-                        <input type="text" class="form-control" id="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">密码</label>
-                        <input type="password" class="form-control" id="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">角色</label>
-                        <select class="form-select" id="role" required>
-                            <option value="admin">管理员</option>
-                            <option value="operator">操作员</option>
-                            <option value="viewer">观察员</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="submit" form="userForm" class="btn btn-primary" id="submitButton">保存</button>
-            </div>
+          <!-- Header -->
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-person-gear"></i>用户信息管理
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+    
+          <!-- Body -->
+          <div class="modal-body">
+            <form id="userForm" onsubmit="handleUserSubmit(event)">
+              <input type="hidden" id="userId">
+              <div class="mb-3">
+                <label for="username" class="form-label">用户名</label>
+                <input type="text" class="form-control" id="username" required placeholder="输入用户名">
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">密码</label>
+                <input type="password" class="form-control" id="password" required placeholder="设置登录密码">
+              </div>
+              <div class="mb-3">
+                <label for="role" class="form-label">角色权限</label>
+                <select class="form-select" id="role" required>
+                  <option value="admin">系统管理员</option>
+                  <option value="operator">操作员</option>
+                  <option value="viewer" selected>观察员</option>
+                </select>
+              </div>
+            </form>
+          </div>
+    
+          <!-- Footer -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-lg btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="submit" form="userForm" class="btn btn-lg btn-primary">保存变更</button>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-
-<!-- 删除确认弹窗 -->
-<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteConfirmationModalLabel">确认删除</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+    
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+          <!-- 头部优化 -->
+          <div class="modal-header bg-danger text-white py-3 px-4">
+            <h5 class="modal-title fs-5 fw-semibold">
+              <i class="bi bi-exclamation-triangle me-2"></i>确认删除
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+    
+          <!-- 主体优化 -->
+          <div class="modal-body p-4">
+            <div class="d-flex align-items-center">
+              <div class="bg-danger bg-opacity-10 p-3 rounded-circle me-3">
+                <i class="bi bi-trash3-fill text-danger fs-4"></i>
+              </div>
+              <div>
+                <h6 class="fw-medium mb-1">确定要删除该用户吗？</h6>
+                <p class="text-muted small mb-0">此操作将永久删除用户数据且无法恢复！</p>
+              </div>
             </div>
-            <div class="modal-body">
-                您确定要删除该用户吗？此操作无法撤销！
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteButton">确认删除</button>
-            </div>
+          </div>
+    
+          <!-- 底部优化 -->
+          <div class="modal-footer bg-light p-4">
+            <button type="button"
+                    class="btn btn-lg btn-outline-secondary rounded-2 px-4"
+                    data-bs-dismiss="modal">
+              取消操作
+            </button>
+            <button type="button"
+                    class="btn btn-lg btn-danger rounded-2 px-4"
+                    id="confirmDeleteButton">
+              确认删除
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-
+    
+    <script>
+    let userData = [];
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUserData();
+        setupEventListeners();
+    });
+    
+    // 加载用户数据
+    async function loadUserData() {
+        showLoader();
+        try {
+            const response = await fetch('/users', { method: 'GET' });
+            if (!response.ok) throw new Error('加载用户数据失败');
+            userData = await response.json();
+            renderUserTable(userData);
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            hideLoader();
+        }
+    }
+    
+    // 渲染用户表格
+    function renderUserTable(users) {
+        const content = document.getElementById('userManagementContent');
+        const tableHTML = `
+            <table class="table table-striped">
+                <tbody>
+                    ${users.map(user => `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.role}</td>
+                            <td>${formatDate(user.created_at)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">编辑</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">删除</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        content.innerHTML = tableHTML;
+    }
+    
+    // 编辑用户
+    async function editUser(userId) {
+        try {
+            const response = await fetch(`/users/${userId}`, { method: 'GET' });
+            if (!response.ok) throw new Error('获取用户信息失败');
+            const user = await response.json();
+            openUserForm(user);
+        } catch (error) {
+            showError(error.message);
+        }
+    }
+    
+    let userIdToDelete = null; // 存储待删除的用户ID
+    
+    // 删除用户
+    async function deleteUser(userId) {
+        userIdToDelete = userId;
+    
+        // 显示确认弹窗
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+        deleteModal.show();
+    
+        // 监听确认删除按钮点击事件
+        document.getElementById('confirmDeleteButton').onclick = async () => {
+            try {
+                const response = await fetch(`/users/delete/${userIdToDelete}`, { method: 'POST' });
+                if (!response.ok) throw new Error('删除用户失败');
+    
+                // 显示成功信息
+                showToast('success', '用户删除成功！');
+    
+                loadUserData(); // 重新加载数据
+                deleteModal.hide(); // 关闭弹窗
+            } catch (error) {
+                // 显示错误信息
+                showToast('error', error.message || '请求失败，请稍后重试');
+            }
+        };
+    }
+    
+    // 打开用户表单（新增或编辑）
+    function openUserForm(user) {
+        if (user) {
+            document.getElementById('userId').value = user.id;
+            document.getElementById('username').value = user.username;
+            document.getElementById('role').value = user.role;
+            document.getElementById('password').value = '';
+        } else {
+            document.getElementById('userId').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('role').value = 'viewer';
+            document.getElementById('password').value = '';
+        }
+        new bootstrap.Modal(document.getElementById('userFormModal')).show();
+    }
+    
+    // 处理表单提交
+    let isSubmitting = false;  // 提交状态锁
+    
+    async function handleUserSubmit(event) {
+        event.preventDefault();
+        if (isSubmitting) return;  // 如果正在提交，直接返回
+        isSubmitting = true;       // 锁定
+    
+        const formData = {
+            id: document.getElementById('userId').value || null,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            role: document.getElementById('role').value
+        };
+    
+        try {
+            const response = await fetch('/users/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '保存用户失败');
+            }
+    
+            // 显示成功信息
+            showToast('success', formData.id ? '用户更新成功！' : '用户新增成功！');
+    
+            loadUserData(); // 重新加载数据
+            document.getElementById('userForm').reset(); // 重置表单
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userFormModal'));
+            if (modal) {
+                modal.hide();
+            }
+        } catch (error) {
+            // 显示错误信息
+            showToast('error', error.message || '请求失败，请稍后重试');
+        } finally {
+            isSubmitting = false;  // 无论成功与否，解除锁定
+        }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+        document.getElementById('userForm').addEventListener('submit', handleUserSubmit);
+    }
+    
+    // 显示加载状态
+    function showLoader() {
+        document.getElementById('userManagementLoader').style.display = 'block';
+    }
+    
+    // 隐藏加载状态
+    function hideLoader() {
+        document.getElementById('userManagementLoader').style.display = 'none';
+    }
+    
+    // 显示错误信息
+    function showError(message) {
+        const errorDiv = document.getElementById('userManagementError');
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
+    
+    // 隐藏错误信息
+    function hideError() {
+        document.getElementById('userManagementError').classList.add('d-none');
+    }
+    
+    // 格式化日期时间
+    function formatDate(dateString) {
+        if (!dateString) return '未知时间';
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+    </script>
+    

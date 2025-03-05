@@ -1,45 +1,238 @@
-<div class="card mt-3" style="border: none; box-shadow: none;">
-    <div class="card-body">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span class="mb-0">
-                Operational Audits
-            </span>
-            <button 
-                id="refreshLogsButton" 
-                class="btn btn-primary btn-sm" 
-                onclick="loadOperationLogs()"
-            >
-                <i class="bi bi-arrow-repeat"></i> 刷新
-            </button>
+<style>
+    /* 专业级样式优化 */
+    .audit-card {
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #ffffff 0%, #f8f9fc 100%);
+      box-shadow: 0 8px 32px rgba(0, 34, 77, 0.1);
+      overflow: hidden;
+    }
+    
+    .table-audit {
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: rgba(241, 243, 245, 0.5);
+      --bs-table-hover-bg: rgba(59, 130, 246, 0.08);
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: 'Segoe UI', system-ui;
+      margin: 0.75rem 0; /* 增加表格上下边距 */
+    }
+    
+    .table-audit thead {
+      background: linear-gradient(95deg, #2c3e50 0%, #34495e 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+    
+    .table-audit th {
+      padding: 1rem 1.75rem; /* 优化单元格内边距 */
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .table-audit td {
+      padding: 1rem 1.75rem; /* 优化单元格内边距 */
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      transition: background 0.25s ease;
+    }
+    
+    .audit-header {
+      padding: 1.5rem 2rem;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .audit-header-title {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: #1a365d;
+      position: relative;
+      padding-left: 0 !important; /* 移除图标占位空间 */
+    }
+    
+    #refreshLogsButton {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border: none;
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #refreshLogsButton:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* 高级分页样式 */
+    .pagination-pro {
+      --pagination-active-bg: #3b82f6;
+      --pagination-hover-bg: #f1f3f5;
+    }
+    
+    .pagination-pro .page-item:not(:first-child) {
+      margin-left: 6px;
+    }
+    
+    .pagination-pro .page-link {
+      min-width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      transition: all 0.2s;
+    }
+    
+    .pagination-pro .page-item.active .page-link {
+      background: var(--pagination-active-bg);
+      border-color: var(--pagination-active-bg);
+      color: white;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+    
+    .pagination-pro .page-link:hover {
+      background: var(--pagination-hover-bg);
+    }
+    
+    /* 高级加载动画 */
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+    
+    .skeleton-wave {
+      animation: skeleton-loading 1.5s infinite linear;
+    }
+    
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    @media (max-width: 768px) {
+      .audit-card {
+        border-radius: 0;
+        box-shadow: none;
+      }
+    
+      .table-audit td {
+        padding: 0.875rem 1rem;
+      }
+    
+      .audit-header {
+        padding: 1.25rem;
+      }
+    }
+    
+    /* 表格间距优化 */
+    .card-body {
+      padding: 1.5rem; /* 增加容器内边距 */
+    }
+    
+    /* Table Header Styling */
+    .table-audit thead {
+      background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%); /* Match the gradient background */
+      color: white; /* Ensure text is white for contrast */
+      position: sticky;
+      top: 0;
+      z-index: 1; /* Ensure it stays on top when scrolling */
+    }
+    
+    .table-audit th {
+      padding: 1rem 1.75rem; /* Consistent padding */
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+      text-transform: uppercase; /* Uppercase for header text */
+      color: #F7FAFC; /* Snow white text color */
+      font-size: 0.875rem; /* Consistent font size */
+      letter-spacing: 0.05em;
+    }
+    
+    .table-audit th:first-child {
+      padding-left: 2rem; /* Extra padding for the first column */
+    }
+    
+    .table-audit th:last-child {
+      padding-right: 2rem; /* Extra padding for the last column */
+    }
+    
+    /* Ensure consistent styling for the table */
+    .table-audit {
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: 'Segoe UI', system-ui;
+      margin: 0.75rem 0; /* Margin for spacing */
+    }
+    
+    </style>
+    
+    
+    <div class="card audit-card">
+        <div class="card-header audit-header d-flex justify-content-between align-items-center">
+          <h2 class="audit-header-title mb-0"></h2>
+          <button 
+            id="refreshLogsButton" 
+            class="btn d-flex align-items-center"
+            onclick="loadOperationLogs()"
+          >
+            <i class="bi bi-arrow-repeat" style="font-size: 1.1em;"></i>
+            <span>同步日志</span>
+          </button>
         </div>
-        <div class="table-responsive">
-            <table 
-                id="operationLogsTable" 
-                class="table table-hover table-striped table-bordered"
-            >
-                <thead class="table-light">
-                    <tr>
-                        <th class="text-nowrap">ID</th>
-                        <th class="text-nowrap">操作</th>
-                        <th class="text-nowrap">详情</th>
-                        <th class="text-nowrap">时间</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- 数据将通过 JavaScript 动态加载 -->
-                </tbody>
+    
+        <div class="card-body position-relative">
+          <div class="table-responsive">
+            <table class="table table-audit" id="operationLogsTable" >
+              <thead>
+                <tr>
+                  <th class="ps-3">事件ID</th>
+                  <th style="min-width: 140px;">操作类型</th>
+                  <th style="min-width: 300px;">审计详情</th>
+                  <th class="pe-3 text-end">时间戳</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <tr>
+                  <td class="text-primary">#202406-001</td>
+                  <td><span class="badge bg-opacity-10 bg-primary">配置变更</span></td>
+                  <td class="text-truncate" style="max-width: 420px;">用户 admin 修改防火墙规则...</td>
+                  <td class="text-end"><time>2024-06-15 14:22:35 UTC</time></td>
+                </tr>
+              </tbody>
             </table>
-        </div>
-        
-        <!-- 分页 -->
-        <nav 
-            id="logsPagination" 
-            class="mt-4" 
-            aria-label="Page navigation"
-        >
-            <ul class="pagination justify-content-center mb-0">
-                <!-- 分页按钮将由 JavaScript 生成 -->
+          </div>
+    
+            <!-- 分页 -->
+    
+    
+          <nav class="border-top" id="logsPagination" >
+            <ul class="pagination pagination-pro justify-content-end my-3 mx-3">
+              <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">
+                  <i class="bi bi-chevron-left"></i>
+                </a>
+              </li>
+              <li class="page-item active"><a class="page-link" href="#">1</a></li>
+              <li class="page-item"><a class="page-link" href="#">2</a></li>
+              <li class="page-item"><a class="page-link" href="#">3</a></li>
+              <li class="page-item">
+                <a class="page-link" href="#">
+                  <i class="bi bi-chevron-right"></i>
+                </a>
+              </li>
             </ul>
-        </nav>
+          </nav>
+        </div>
     </div>
-</div>
+    
+    

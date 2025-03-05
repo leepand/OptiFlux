@@ -21,7 +21,7 @@ from .routes import (
 )
 
 # from ..config import SERVER_HOST, SERVER_PORT,ENV_DIRS
-from ..config import ENV_DIRS, NODES
+from ..config import ENV_DIRS
 from ..utils.env import load_or_initialize_config
 from ..utils.service import (
     generate_service_script,
@@ -574,12 +574,6 @@ def deploy():
         if hasattr(g, "permission_denied_response"):
             return g.permission_denied_response
 
-        print("Received files:", list(request.files.keys()))
-        # uploadType=request.form.get('uploadType')
-        # print("uploadType",uploadType)
-        for f in request.files.getlist("files"):
-            print(f"File: {f.filename} | Size: {len(f.read())} bytes")
-
         # 获取表单数据
         model_registry = []
         env = request.form.get("env", "dev")
@@ -702,7 +696,7 @@ def login():
             session.modified = True  # 显式标记会话已修改
 
             add_log("用户登陆", f"{username}:登陆成功", user.id)
-            # flash('Logged in successfully.')
+            # flash("Logged in successfully.")
             # return redirect(url_for("index"))
             # 检查是否需要返回 JSON 响应
             if request.headers.get("Accept") == "application/json":
@@ -1420,30 +1414,6 @@ def get_readme():
         return content
     except Exception as e:
         return str(e), 404
-
-
-@app.route("/api/nodes")
-def api_nodes():
-    return jsonify(
-        {
-            "status": "success",
-            "data": [
-                node for node in NODES if node["status"] == "healthy"
-            ],  # 过滤不可用节点
-        }
-    )
-
-
-import random
-
-
-def check_node_status(ip, port):
-    """模拟节点健康检查"""
-    try:
-        # 实际生产环境应实现真实检查逻辑
-        return "healthy" if random.random() > 0.2 else "unhealthy"  # 80%健康率
-    except:
-        return "unhealthy"
 
 
 def main():

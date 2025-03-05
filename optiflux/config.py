@@ -1,6 +1,7 @@
 # optiflux/config.py
 import os
 from dotenv import load_dotenv
+import json
 
 from .utils.file_utils import ensure_dir_exists, data_dir_default
 
@@ -9,6 +10,16 @@ def load_config(env="dev"):
     """加载环境配置"""
     # 加载环境变量优先级：.env.<env> > .env
     loaded = load_dotenv(f".env.{env}") or load_dotenv(".env")
+
+    # 解析节点配置
+    nodes_config = os.getenv("NODES")
+    try:
+        nodes = json.loads(nodes_config)
+        if not isinstance(nodes, list):
+            raise ValueError("NODES 配置格式错误，必须为JSON数组")
+    except (json.JSONDecodeError, TypeError) as e:
+        nodes = []
+        print(f"节点配置解析失败: {str(e)}")
 
     return {
         # 基础配置
@@ -30,6 +41,7 @@ def load_config(env="dev"):
         "GUNICORN_WORKERS": int(os.getenv("GUNICORN_WORKERS", 4)),
         "GUNICORN_TIMEOUT": int(os.getenv("GUNICORN_TIMEOUT", 30)),
         "GUNICORN_LOGLEVEL": os.getenv("GUNICORN_LOGLEVEL", "info"),
+        "NODES": nodes,
     }
 
 
@@ -48,6 +60,7 @@ base_config = get_config("prod")
 
 ENV_DIRS = base_config["ENV_DIRS"]
 LOG_DIR = base_config["LOG_DIR"]
+NODES = base_config["NODES"]
 
 base_paths = [ENV_DIRS["dev"], ENV_DIRS["preprod"], ENV_DIRS["prod"], LOG_DIR]
 for bp in base_paths:
