@@ -773,7 +773,7 @@ function createLogoutConfirm(onConfirm, onCancel) {
                           <div class="text-center py-5">
                               <div class="text-muted mb-3">
                                   暂无模型，请
-                                  <a href="javascript:void(0)" 
+                                  <a href="javascript:void(0)"
                                      class="text-primary text-decoration-underline cursor-pointer"
                                      onclick="showDocumentation()"
                                      id="addModelLink"
@@ -784,10 +784,11 @@ function createLogoutConfirm(onConfirm, onCancel) {
                               </div>
                           </div>
                       `;
+                      // 清空分页控件
+                      document.getElementById('pagination').innerHTML = '';
                       return;
                   }
-                  //console.log(result.model_names,"result.model_names",result.model_names.length)
-                  
+  
                   let modelNamesHTML = '';
                   result.model_names.forEach(model => {
                       modelNamesHTML += `
@@ -877,14 +878,18 @@ function createLogoutConfirm(onConfirm, onCancel) {
                   document.getElementById('pagination').innerHTML = paginationHTML;
               } else {
                   modelNamesList.innerHTML = '<div class="text-danger">Failed to load model names. Please try again later.</div>';
+                  // 清空分页控件
+                  document.getElementById('pagination').innerHTML = '';
               }
           })
           .catch(error => {
               console.error("Error loading model names:", error);
               modelNamesList.innerHTML = '<div class="text-danger">An error occurred. Please try again later.</div>';
+              // 清空分页控件
+              document.getElementById('pagination').innerHTML = '';
           });
   }
-  // 返回 Model Names 列表
+  
   function showModelNames() {
       const modelNamesList = document.getElementById('modelNamesList');
       const modelVersionsList = document.getElementById('modelVersionsList');
@@ -902,9 +907,10 @@ function createLogoutConfirm(onConfirm, onCancel) {
   
           // 重新加载模型列表
           const env = envSelect.value;
-          loadModelNames(env, currentPage);
+          loadModelNames(env, 1); // 重置为第一页
       }
   }
+  
   
   
   function loadModelVersions(env, modelName) {

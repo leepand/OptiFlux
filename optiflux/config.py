@@ -42,7 +42,7 @@ def load_config(env="dev"):
         "GUNICORN_TIMEOUT": int(os.getenv("GUNICORN_TIMEOUT", 30)),
         "GUNICORN_LOGLEVEL": os.getenv("GUNICORN_LOGLEVEL", "info"),
         "NODES": nodes,
-        "META_DB":os.getenv("META_DB_DIR", os.path.join(os.getcwd(), "meta_db"))
+        "META_DB": os.getenv("META_DB_DIR", os.path.join(os.getcwd(), "meta_db")),
     }
 
 
@@ -62,7 +62,7 @@ base_config = get_config("prod")
 ENV_DIRS = base_config["ENV_DIRS"]
 LOG_DIR = base_config["LOG_DIR"]
 NODES = base_config["NODES"]
-META_DB_DIR=base_config["META_DB_DIR"]
+META_DB_DIR = base_config["META_DB"]
 
 base_paths = [ENV_DIRS["dev"], ENV_DIRS["preprod"], ENV_DIRS["prod"], LOG_DIR]
 for bp in base_paths:

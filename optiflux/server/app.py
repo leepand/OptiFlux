@@ -38,7 +38,7 @@ def create_app():
     app.secret_key = "secret-key"
 
     # 配置 SQLite 数据库
-    basedir = META_DB_DIR#  os.path.abspath(os.path.dirname(__file__))
+    basedir = META_DB_DIR  #  os.path.abspath(os.path.dirname(__file__))
 
     os.makedirs(os.path.join(basedir, "data"), exist_ok=True)
 
