@@ -773,7 +773,7 @@ function createLogoutConfirm(onConfirm, onCancel) {
                           <div class="text-center py-5">
                               <div class="text-muted mb-3">
                                   暂无模型，请
-                                  <a href="javascript:void(0)" 
+                                  <a href="javascript:void(0)"
                                      class="text-primary text-decoration-underline cursor-pointer"
                                      onclick="showDocumentation()"
                                      id="addModelLink"
@@ -784,10 +784,11 @@ function createLogoutConfirm(onConfirm, onCancel) {
                               </div>
                           </div>
                       `;
+                      // 清空分页控件
+                      document.getElementById('pagination').innerHTML = '';
                       return;
                   }
-                  //console.log(result.model_names,"result.model_names",result.model_names.length)
-                  
+  
                   let modelNamesHTML = '';
                   result.model_names.forEach(model => {
                       modelNamesHTML += `
@@ -877,14 +878,18 @@ function createLogoutConfirm(onConfirm, onCancel) {
                   document.getElementById('pagination').innerHTML = paginationHTML;
               } else {
                   modelNamesList.innerHTML = '<div class="text-danger">Failed to load model names. Please try again later.</div>';
+                  // 清空分页控件
+                  document.getElementById('pagination').innerHTML = '';
               }
           })
           .catch(error => {
               console.error("Error loading model names:", error);
               modelNamesList.innerHTML = '<div class="text-danger">An error occurred. Please try again later.</div>';
+              // 清空分页控件
+              document.getElementById('pagination').innerHTML = '';
           });
   }
-  // 返回 Model Names 列表
+  
   function showModelNames() {
       const modelNamesList = document.getElementById('modelNamesList');
       const modelVersionsList = document.getElementById('modelVersionsList');
@@ -902,9 +907,10 @@ function createLogoutConfirm(onConfirm, onCancel) {
   
           // 重新加载模型列表
           const env = envSelect.value;
-          loadModelNames(env, currentPage);
+          loadModelNames(env, 1); // 重置为第一页
       }
   }
+  
   
   
   function loadModelVersions(env, modelName) {
@@ -2020,7 +2026,7 @@ function createLogoutConfirm(onConfirm, onCancel) {
   
   // 动态加载节点数据
   // 在之前的loadNodes函数中添加
-  async function loadNodes333() {
+  async function loadNodes() {
     try {
       const response = await fetch('/api/nodes');
       const { data: nodes } = await response.json();
@@ -2172,78 +2178,6 @@ function createLogoutConfirm(onConfirm, onCancel) {
     return container;
   };
   
-async function loadNodes() {
-  const selector = document.getElementById('nodeSelector');
-  
-  try {
-    // 移除旧的事件监听器
-    const oldHandler = selector.onchange;
-    selector.onchange = null;
-
-    // 获取节点数据
-    const response = await fetch('/api/nodes');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const { data: nodes } = await response.json();
-
-    // 清空并重新填充选项
-    selector.innerHTML = '';
-    nodes.forEach(node => {
-      const option = new Option(`${node.name} (${parseHost(node.url)})`, node.url);
-      selector.appendChild(option);
-    });
-
-    // 设置初始选中状态（关键修改点1）
-    const currentURL = new URL(window.location.href);
-    const matchedNode = nodes.find(node => {
-      try {
-        const nodeURL = new URL(node.url);
-        return nodeURL.origin === currentURL.origin;
-      } catch {
-        return false;
-      }
-    });
-    
-    if (matchedNode) {
-      selector.value = matchedNode.url;
-      selector.dataset.currentUrl = matchedNode.url;
-    } else if (nodes.length > 0) {
-      selector.value = nodes[0].url;
-      selector.dataset.currentUrl = nodes[0].url;
-    }
-
-    // 绑定新的事件监听器（关键修改点2）
-    selector.addEventListener('change', function() {
-      const selectedUrl = this.value;
-      if (!selectedUrl) return;
-
-      const modal = createConfirmModal(
-        `切换到 ${this.options[this.selectedIndex].text}`,
-        `确定要切换至该计算节点？`,
-        () => {
-          // 精确处理URL拼接（关键修改点3）
-          const currentUrl = new URL(window.location.href);
-          const targetUrl = new URL(selectedUrl);
-          
-          // 保留路径和参数
-          targetUrl.pathname = currentUrl.pathname;
-          targetUrl.search = currentUrl.search;
-          
-          window.location.href = targetUrl.toString();
-        },
-        () => {
-          this.value = this.dataset.currentUrl;
-        }
-      );
-      
-      document.body.appendChild(modal);
-    });
-
-  } catch (error) {
-    console.error('节点加载失败:', error);
-    selector.innerHTML = '<option value="">节点加载失败</option>';
-  }
-}
-
   // 页面加载时执行
   document.addEventListener('DOMContentLoaded', () => {
     loadNodes();
