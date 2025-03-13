@@ -3,6 +3,7 @@ from diskcache import Cache
 from typing import Any, Optional
 import os
 from pathlib import Path
+from ..config import ENV_DIRS
 
 # 配置日志
 logging.basicConfig(
@@ -105,54 +106,72 @@ def find_directory_from_fragment(fragment: str) -> Optional[str]:
 
 
 def make(
-    env: str, model_name: str, db_name, model_version: Optional[str] = None
+    env: str,
+    model_name: str,
+    db_name: str,
+    model_version: Optional[str] = None,
+    default_version: str = "0.0"  # 允许配置默认版本
 ) -> Optional[ModelCache]:
     """
-    根据环境和模型信息创建缓存实例。
-
+    优化后的缓存创建函数，支持更健壮的路径处理和错误反馈
+    
     Args:
-        env (str): 环境名称（例如 "dev"）。
-        model_name (str): 模型名称。
-        model_version (Optional[str]): 模型版本，可选。
+        env: 环境名称 (e.g. "dev")
+        model_name: 模型名称
+        db_name: 数据库名称
+        model_version: 模型版本 (可选)
+        default_version: 默认版本号 (从配置读取更佳)
 
     Returns:
-        Optional[ModelCache]: 如果成功则返回缓存实例，否则返回 None。
+        ModelCache 实例或 None
     """
-    # 构建片段路径
-    if model_version is not None:
-        db0 = False
-        fragment_path = f"{env}/{model_name}/{model_version}"
-    else:
-        db0 = True
-        fragment_path = f"{env}/{model_name}"
+    try:
+        # 使用 Pathlib 处理路径
+        base_path: Path
+        
+        # 场景1: 有明确版本号时
+        if model_version:
+            fragment = f"{env}/{model_name}/{model_version}"
+            found_path = find_directory_from_fragment(fragment)
+            
+            if found_path:
+                base_path = Path(found_path)
+                logger.debug(f"精确匹配版本路径: {base_path}")
+            else:
+                logger.warning(f"版本路径 {fragment} 未找到，尝试回退方案")
+                raise ValueError("Version path not found")
 
-    logger.debug(f"构建片段路径: {fragment_path}")
+        # 场景2: 无版本号时使用默认版本
+        else:
+            fragment = f"{env}/{model_name}"
+            found_path = find_directory_from_fragment(fragment)
+            
+            if found_path:
+                base_path = Path(found_path) / default_version
+                logger.debug(f"使用默认版本路径: {base_path}")
+            else:
+                # 回退到环境配置的基准目录
+                env_base = ENV_DIRS.get(env)
+                if not env_base:
+                    logger.error(f"环境 {env} 未配置基准目录")
+                    return None
+                
+                base_path = Path(env_base) / model_name / default_version
+                logger.info(f"回退到配置基准目录: {base_path}")
 
-    # 查找目录
-    db_path = find_directory_from_fragment(fragment_path)
-    if not db_path:
-        logger.error(f"无法找到片段路径 '{fragment_path}' 对应的目录")
+        # 统一构建缓存目录路径
+        cache_dir = base_path / "dbs" / db_name
+        logger.debug(f"最终缓存目录: {cache_dir}")
+
+        # 确保目录结构存在
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"已创建缓存目录: {cache_dir}")
+
+        return ModelCache(cache_dir=str(cache_dir))
+
+    except Exception as e:
+        logger.error(f"创建缓存失败: {str(e)}", exc_info=True)
         return None
-
-    # 构建缓存目录路径
-    if db0:
-        db_path_formake = os.path.join(db_path, "0.0/dbs")
-    else:
-        db_path_formake = os.path.join(db_path, "dbs")
-
-    logger.debug(f"缓存目录路径: {db_path_formake}")
-
-    # 确保目标目录存在
-    os.makedirs(os.path.dirname(db_path_formake), exist_ok=True)
-    logger.info(f"创建目录: {os.path.dirname(db_path_formake)}")
-
-    # 初始化缓存实例
-    db_name_path = f"{db_path_formake}/{db_name}"
-    db_cache = ModelCache(cache_dir=db_name_path)
-    logger.info(f"初始化缓存实例，目录: {db_name_path}")
-
-    return db_cache
-
 
 # 示例用法
 """if __name__ == "__main__":

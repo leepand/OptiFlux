@@ -567,12 +567,12 @@ def create_project(args):
         src_dir / "decision_module.py": "# 决策模块\n",
         src_dir / "strategy_module.py": "# 策略模块\n",
         src_dir
-        / "model.py": f"""from optiflux.core import BaseModel
+        / "model.py": f"""from optiflux.core import Model
 import logging
 
 logger = logging.getLogger("optiflux.{model_name}")
 
-class {model_name.title()}Model(BaseModel):
+class {model_name.title()}Model(Model):
     DEFAULT_CONFIG = {{
         "model_path": "models/{model_name}_v1.pt",
         "threshold": 0.5
@@ -587,26 +587,27 @@ class {model_name.title()}Model(BaseModel):
         # 预测逻辑
 """,
         src_dir
-        / "recomserver.py": f"""from optiflux import BaseModel, ModelLibrary, make
+        / "recomserver.py": f"""from optiflux import Model,make
 from optiflux.utils.logx import LoggerManager
-from optiflux import make
+from optiflux.api import create_optiflux_app
 
 import traceback
 import numpy as np
 import os
 import json
 
-from utils import MODEL_ENV, VERSION
+from .utils import MODEL_ENV, VERSION
 
 
-class RecomServer(BaseModel):
-    def _load(self):
+class RecomServer(Model):
+    def load(self):
         self.model_name = f"{model_name}"
   
         self.model_db = make(
-            f"cache/{{self.model_name}}-v{{VERSION}}",
-            db_name="{model_name}.db",
             env=MODEL_ENV,
+            f"{{self.model_name}}",
+            db_name="{model_name}.db",
+            ,
         )
         self.logger=LoggerManager()
 
@@ -627,27 +628,10 @@ class RecomServer(BaseModel):
             return items
 
 # 初始化模型库
-library = ModelLibrary(
-    models={{"recomserver": RecomServer}},
-    #config_path="config.yml",
-        #cache_dir=".prod_cache",
-    size_limit=5*1024**3  # 5GB 缓存
-)
-
-# 创建 API 应用
-api_config={{
-        "title": "Production Recomserver API",
-        "api_prefix": "",
-        "enable_docs": True
-    }}
-api_service = create_optiflux_app(
-    library,
-    **api_config
-)
-app = api_service.app  # ✅ 关键：导出 FastAPI 实例
+app = create_optiflux_app(model={{"recomserver": RecomServer}})
 """,
         src_dir
-        / "rewardserver.py": f"""from optiflux import BaseModel, ModelLibrary, make
+        / "rewardserver.py": f"""from optiflux import Model, make
 from optiflux.utils.logx import LoggerManager
 from optiflux.api import create_optiflux_app
 
@@ -657,17 +641,17 @@ import numpy as np
 import os
 import json
 
-from utils import MODEL_ENV, VERSION
+from .utils import MODEL_ENV, VERSION
 
 
-class RewardServer(BaseModel):
-    def _load(self):
+class RewardServer(Model):
+    def load(self):
         self.model_name = f"{model_name}"
   
         self.model_db = make(
-            f"cache/{{self.model_name}}-v{{VERSION}}",
+            env=MODEL_ENV
+            f"{{self.model_name}}",
             db_name="{model_name}.db",
-            env=MODEL_ENV,
         )
         self.logger=LoggerManager()
 
@@ -688,26 +672,9 @@ class RewardServer(BaseModel):
             return items
 
 # 初始化模型库
-library = ModelLibrary(
-    models={{"rewardserver": RewardServer}},
-    #config_path="config.yml",
-    #cache_dir=".prod_cache",
-    size_limit=5*1024**3  # 5GB 缓存
-)
-
-# 创建 API 应用
-api_config={{
-        "title": "Production Rewardserver API",
-        "api_prefix": "",
-        "enable_docs": True
-    }}
-api_service = create_optiflux_app(
-    library,
-    **api_config
-)
-app = api_service.app  # ✅ 关键：导出 FastAPI 实例
+app = create_optiflux_app(model={{"rewardserver": RewardServer}})
 """,
-        utils_dir / "__init__.py": "# 工具模块\n",
+        utils_dir / "__init__.py": "# 工具模块\nMODEL_ENV, VERSION='dev','0.0'\n",
         utils_dir
         / "config_loader.py": """import yaml
 from pathlib import Path
