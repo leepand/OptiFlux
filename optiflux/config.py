@@ -83,3 +83,14 @@ for fname in defu_logs_fnames:
     # Open the file in write mode
     if not os.path.exists(log_file):
         open(log_file, "a").close()  # 以追加模式打开并立即关闭
+
+CACHE_CONFIG = os.path.join(data_dir_default(), "cache_config.json")
+
+with open(CACHE_CONFIG, "w", encoding="utf-8") as f:
+    json.dump(
+        ENV_DIRS,
+        f,
+        ensure_ascii=False,  # 禁用 ASCII 转义
+        indent=2,  # 缩进2空格
+        sort_keys=True,  # 按键名排序
+    )

@@ -4,6 +4,8 @@ from typing import Any, Optional
 import os
 from pathlib import Path
 from ..config import ENV_DIRS
+from ..utils.file_utils import data_dir_default
+import json
 
 # 配置日志
 logging.basicConfig(
@@ -12,6 +14,12 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
+
+
+CACHE_CONFIG = os.path.join(data_dir_default(), "cache_config.json")
+# 从文件加载
+with open(CACHE_CONFIG, "r", encoding="utf-8") as f:
+    CACHE_DIRS = json.load(f)
 
 
 class ModelCache:
@@ -110,11 +118,12 @@ def make(
     model_name: str,
     db_name: str,
     model_version: Optional[str] = None,
-    default_version: str = "0.0"  # 允许配置默认版本
+    default_version: str = "0.0",  # 允许配置默认版本
+    use_sys_path=True,
 ) -> Optional[ModelCache]:
     """
     优化后的缓存创建函数，支持更健壮的路径处理和错误反馈
-    
+
     Args:
         env: 环境名称 (e.g. "dev")
         model_name: 模型名称
@@ -128,12 +137,27 @@ def make(
     try:
         # 使用 Pathlib 处理路径
         base_path: Path
-        
+        if use_sys_path:
+            if model_version:
+                base_path = f"{CACHE_DIRS[env]}/{model_name}/{model_version}"
+            else:
+                base_path = f"{CACHE_DIRS[env]}/{model_name}/{default_version}"
+
+            # 统一构建缓存目录路径
+            cache_dir = Path(base_path) / "dbs" / db_name
+            logger.debug(f"最终缓存目录: {cache_dir}")
+
+            # 确保目录结构存在
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"已创建缓存目录: {cache_dir}")
+
+            return ModelCache(cache_dir=str(cache_dir))
+
         # 场景1: 有明确版本号时
         if model_version:
             fragment = f"{env}/{model_name}/{model_version}"
             found_path = find_directory_from_fragment(fragment)
-            
+
             if found_path:
                 base_path = Path(found_path)
                 logger.debug(f"精确匹配版本路径: {base_path}")
@@ -145,7 +169,7 @@ def make(
         else:
             fragment = f"{env}/{model_name}"
             found_path = find_directory_from_fragment(fragment)
-            
+
             if found_path:
                 base_path = Path(found_path) / default_version
                 logger.debug(f"使用默认版本路径: {base_path}")
@@ -155,7 +179,7 @@ def make(
                 if not env_base:
                     logger.error(f"环境 {env} 未配置基准目录")
                     return None
-                
+
                 base_path = Path(env_base) / model_name / default_version
                 logger.info(f"回退到配置基准目录: {base_path}")
 
@@ -172,6 +196,7 @@ def make(
     except Exception as e:
         logger.error(f"创建缓存失败: {str(e)}", exc_info=True)
         return None
+
 
 # 示例用法
 """if __name__ == "__main__":

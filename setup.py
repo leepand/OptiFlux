@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="optiflux",
-    version="0.1.0",
+    version="1.0.01",
     author="leepand",
     author_email="your.email@example.com",
     description="A lightweight MLOps tool for code deployment and management.",

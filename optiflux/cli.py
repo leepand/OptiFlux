@@ -605,9 +605,8 @@ class RecomServer(Model):
   
         self.model_db = make(
             env=MODEL_ENV,
-            f"{{self.model_name}}",
+            model_name=f"{{self.model_name}}",
             db_name="{model_name}.db",
-            ,
         )
         self.logger=LoggerManager()
 
@@ -649,8 +648,8 @@ class RewardServer(Model):
         self.model_name = f"{model_name}"
   
         self.model_db = make(
-            env=MODEL_ENV
-            f"{{self.model_name}}",
+            env=MODEL_ENV,
+            model_name=f"{{self.model_name}}",
             db_name="{model_name}.db",
         )
         self.logger=LoggerManager()
