@@ -3,7 +3,6 @@ from diskcache import Cache
 from typing import Any, Optional
 import os
 from pathlib import Path
-from ..config import ENV_DIRS
 from ..utils.file_utils import data_dir_default
 import json
 
@@ -174,14 +173,7 @@ def make(
                 base_path = Path(found_path) / default_version
                 logger.debug(f"使用默认版本路径: {base_path}")
             else:
-                # 回退到环境配置的基准目录
-                env_base = ENV_DIRS.get(env)
-                if not env_base:
-                    logger.error(f"环境 {env} 未配置基准目录")
-                    return None
-
-                base_path = Path(env_base) / model_name / default_version
-                logger.info(f"回退到配置基准目录: {base_path}")
+                base_path = Path(os.getcwd()) / f"{env}/{model_name}" / default_version
 
         # 统一构建缓存目录路径
         cache_dir = base_path / "dbs" / db_name

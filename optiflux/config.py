@@ -86,11 +86,12 @@ for fname in defu_logs_fnames:
 
 CACHE_CONFIG = os.path.join(data_dir_default(), "cache_config.json")
 
-with open(CACHE_CONFIG, "w", encoding="utf-8") as f:
-    json.dump(
-        ENV_DIRS,
-        f,
-        ensure_ascii=False,  # 禁用 ASCII 转义
-        indent=2,  # 缩进2空格
-        sort_keys=True,  # 按键名排序
-    )
+if not os.path.exists(CACHE_CONFIG):
+    with open(CACHE_CONFIG, "w", encoding="utf-8") as f:
+        json.dump(
+            ENV_DIRS,
+            f,
+            ensure_ascii=False,  # 禁用 ASCII 转义
+            indent=2,  # 缩进2空格
+            sort_keys=True,  # 按键名排序
+        )
