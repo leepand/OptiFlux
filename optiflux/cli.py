@@ -624,6 +624,7 @@ class RecomServer(Model):
                 str(traceback.format_exc()),
             ]
             self.logger.log_error("recom",[error_content])
+            self.logger.log_info("recom", [items])
             return items
 
 # 初始化模型库
@@ -668,6 +669,7 @@ class RewardServer(Model):
                 str(traceback.format_exc()),
             ]
             self.logger.log_error("reward",[error_content])
+            self.logger.log_info("reward", [items])
             return items
 
 # 初始化模型库
