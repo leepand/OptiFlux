@@ -85,7 +85,8 @@ for fname in defu_logs_fnames:
         open(log_file, "a").close()  # 以追加模式打开并立即关闭
 
 CACHE_CONFIG = os.path.join(data_dir_default(), "cache_config.json")
-
+# 确保目录存在
+ensure_dir_exists(os.path.dirname(CACHE_CONFIG))
 if not os.path.exists(CACHE_CONFIG):
     with open(CACHE_CONFIG, "w", encoding="utf-8") as f:
         json.dump(
