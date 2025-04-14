@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 CACHE_CONFIG = os.path.join(data_dir_default(), "cache_config.json")
+# 从文件加载
+with open(CACHE_CONFIG, "r", encoding="utf-8") as f:
+    CACHE_DIRS = json.load(f)
 
 
 class ModelCache:
@@ -30,8 +33,19 @@ class ModelCache:
         """
         self.cache = Cache(cache_dir, size_limit=size_limit, **kwargs)
         logger.info(f"初始化缓存，目录: {cache_dir}，大小限制: {size_limit} bytes")
+        
+    def __setitem__(self, key: str, value: Any):
+        """支持 model_db[key] = value 语法"""
+        self.cache.set(key, value)
 
-    def get(self, key: str,defu=None) -> Optional[Any]:
+    def __getitem__(self, key: str) -> Any:
+        """支持 value = model_db[key] 语法"""
+        value = self.cache.get(key)
+        if value is None:
+            raise KeyError(f"Key '{key}' not found in cache")
+        return value
+
+    def get(self, key: str, defu=None) -> Optional[Any]:
         """
         从缓存中获取值。
 
@@ -41,7 +55,7 @@ class ModelCache:
         Returns:
             Optional[Any]: 如果键存在则返回对应的值，否则返回 None。
         """
-        value = self.cache.get(key,defu)
+        value = self.cache.get(key, defu)
         # logger.debug(f"从缓存中获取键 '{key}'，值: {value}")
         return value
 
@@ -134,10 +148,6 @@ def make(
         # 使用 Pathlib 处理路径
         base_path: Path
         if use_sys_path:
-            # 从文件加载
-            with open(CACHE_CONFIG, "r", encoding="utf-8") as f:
-                CACHE_DIRS = json.load(f)
-
             if model_version:
                 base_path = f"{CACHE_DIRS[env]}/{model_name}/{model_version}"
             else:
